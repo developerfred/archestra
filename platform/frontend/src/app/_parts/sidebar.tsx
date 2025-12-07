@@ -1,6 +1,6 @@
 "use client";
 import { SignedIn, SignedOut, UserButton } from "@daveyplate/better-auth-ui";
-import { requiredPagePermissionsMap } from "@shared";
+import { E2eTestId, requiredPagePermissionsMap } from "@shared";
 import {
   BookOpen,
   Bot,
@@ -216,8 +216,10 @@ const MainSideBarSection = ({
         permissions={{ conversation: ["read"] }}
         noPermissionHandle="tooltip"
       >
-        {({ isDisabled }) => {
-          return isDisabled ? (
+        {({ hasPermission }) => {
+          return hasPermission === undefined ? null : hasPermission ? (
+            <ChatSidebarSection />
+          ) : (
             <SidebarGroup>
               <SidebarGroupContent>
                 <Badge variant="outline" className="text-xs mx-4">
@@ -225,8 +227,6 @@ const MainSideBarSection = ({
                 </Badge>
               </SidebarGroupContent>
             </SidebarGroup>
-          ) : (
-            <ChatSidebarSection />
           );
         }}
       </WithPermissions>
@@ -243,12 +243,14 @@ const FooterSideBarSection = ({ pathname }: { pathname: string }) => (
     <SignedIn>
       <SidebarGroup className="mt-auto">
         <SidebarGroupContent>
-          <UserButton
-            size="default"
-            align="center"
-            className="w-full bg-transparent hover:bg-transparent text-foreground"
-            disableDefaultLinks
-          />
+          <div data-testid={E2eTestId.SidebarUserProfile}>
+            <UserButton
+              size="default"
+              align="center"
+              className="w-full bg-transparent hover:bg-transparent text-foreground"
+              disableDefaultLinks
+            />
+          </div>
         </SidebarGroupContent>
       </SidebarGroup>
     </SignedIn>
@@ -287,7 +289,7 @@ export function AppSidebar() {
           alt="Organization logo"
           width={200}
           height={60}
-          className="object-contain h-12 w-full max-w-[calc(100vw-6rem)]"
+          className="object-contain h-12 w-auto max-w-[calc(100vw-6rem)]"
         />
         <p className="text-[10px] text-muted-foreground">
           Powered by Archestra
@@ -296,7 +298,13 @@ export function AppSidebar() {
     </div>
   ) : (
     <div className="flex items-center gap-2 px-2">
-      <Image src="/logo.png" alt="Logo" width={28} height={28} />
+      <Image
+        src="/logo.png"
+        alt="Logo"
+        width={28}
+        height={28}
+        className="h-auto w-auto"
+      />
       <span className="text-base font-semibold">Archestra.AI</span>
     </div>
   );

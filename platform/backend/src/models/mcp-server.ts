@@ -5,6 +5,7 @@ import logger from "@/logging";
 import { McpServerRuntimeManager } from "@/mcp-server-runtime";
 import { secretManager } from "@/secretsmanager";
 import type { InsertMcpServer, McpServer, UpdateMcpServer } from "@/types";
+import AgentToolModel from "./agent-tool";
 import InternalMcpCatalogModel from "./internal-mcp-catalog";
 import McpServerTeamModel from "./mcp-server-team";
 import McpServerUserModel from "./mcp-server-user";
@@ -16,15 +17,11 @@ class McpServerModel {
 
     // For local servers, add a unique identifier to the name to avoid conflicts
     let mcpServerName = serverData.name;
-    if (serverData.serverType === "local") {
-      if (serverData.authType === "personal" && userId) {
-        mcpServerName = `${serverData.name}-${userId}`;
-      } else if (serverData.authType === "team") {
-        mcpServerName = `${serverData.name}-team-${serverData.ownerId}`;
-      }
+    if (serverData.serverType === "local" && userId) {
+      mcpServerName = `${serverData.name}-${userId}`;
     }
 
-    // ownerId and authType are part of serverData and will be inserted
+    // ownerId is part of serverData and will be inserted
     const [createdServer] = await db
       .insert(schema.mcpServersTable)
       .values({ ...serverData, name: mcpServerName })
@@ -70,16 +67,27 @@ class McpServerModel {
 
     // Apply access control filtering for non-MCP server admins
     if (userId && !isMcpServerAdmin) {
-      // Get MCP servers accessible through team membership and personal access in parallel
-      const [teamAccessibleMcpServerIds, personalMcpServerIds] =
-        await Promise.all([
-          McpServerTeamModel.getUserAccessibleMcpServerIds(userId, false),
-          McpServerUserModel.getUserPersonalMcpServerIds(userId),
-        ]);
+      // Get MCP servers accessible through:
+      // 1. Team membership (servers assigned to user's teams)
+      // 2. Personal access (user's own servers)
+      // 3. Teammate ownership (servers owned by users in the same teams)
+      const [
+        teamAccessibleMcpServerIds,
+        personalMcpServerIds,
+        teammateMcpServerIds,
+      ] = await Promise.all([
+        McpServerTeamModel.getUserAccessibleMcpServerIds(userId, false),
+        McpServerUserModel.getUserPersonalMcpServerIds(userId),
+        McpServerTeamModel.getTeammateMcpServerIds(userId),
+      ]);
 
-      // Combine both lists
+      // Combine all lists
       const accessibleMcpServerIds = [
-        ...new Set([...teamAccessibleMcpServerIds, ...personalMcpServerIds]),
+        ...new Set([
+          ...teamAccessibleMcpServerIds,
+          ...personalMcpServerIds,
+          ...teammateMcpServerIds,
+        ]),
       ];
 
       if (accessibleMcpServerIds.length === 0) {
@@ -240,6 +248,24 @@ class McpServerModel {
 
     // For local servers, stop and remove the K8s pod
     if (mcpServer.serverType === "local") {
+      // Clean up agent_tools that use this server as execution source
+      // Must be done before deletion to ensure agents do not retain unusable tool assignments; FK constraint would only null out the reference, not remove the assignment
+      try {
+        const deletedAgentTools =
+          await AgentToolModel.deleteByExecutionSourceMcpServerId(id);
+        if (deletedAgentTools > 0) {
+          logger.info(
+            `Deleted ${deletedAgentTools} agent tool assignments for local MCP server: ${mcpServer.name}`,
+          );
+        }
+      } catch (error) {
+        logger.error(
+          { err: error },
+          `Failed to clean up agent tools for MCP server ${mcpServer.name}:`,
+        );
+        // Continue with deletion even if agent tool cleanup fails
+      }
+
       try {
         await McpServerRuntimeManager.removeMcpServer(id);
         logger.info(`Cleaned up K8s pod for MCP server: ${mcpServer.name}`);

@@ -3805,7 +3805,6 @@ export type GetAgentAvailableTokensResponses = {
         [key: string]: Array<{
             id: string;
             name: string;
-            authType: 'personal' | 'team';
             serverType: 'local' | 'remote';
             catalogId: string | null;
             ownerId: string | null;
@@ -5620,6 +5619,103 @@ export type GetChatAgentMcpToolsResponses = {
 
 export type GetChatAgentMcpToolsResponse = GetChatAgentMcpToolsResponses[keyof GetChatAgentMcpToolsResponses];
 
+export type GenerateChatConversationTitleData = {
+    body?: {
+        /**
+         * Force regeneration even if title already exists (for manual regeneration)
+         */
+        regenerate?: boolean;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/chat/conversations/{id}/generate-title';
+};
+
+export type GenerateChatConversationTitleErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type GenerateChatConversationTitleError = GenerateChatConversationTitleErrors[keyof GenerateChatConversationTitleErrors];
+
+export type GenerateChatConversationTitleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        id: string;
+        userId: string;
+        organizationId: string;
+        agentId: string;
+        promptId: string | null;
+        title: string | null;
+        selectedModel: string;
+        createdAt: string;
+        updatedAt: string;
+        agent: {
+            id: string;
+            name: string;
+        };
+        messages: Array<unknown>;
+    };
+};
+
+export type GenerateChatConversationTitleResponse = GenerateChatConversationTitleResponses[keyof GenerateChatConversationTitleResponses];
+
 export type GetChatSettingsData = {
     body?: never;
     path?: never;
@@ -7190,6 +7286,8 @@ export type GetInternalMcpCatalogResponses = {
         serverType: 'local' | 'remote';
         serverUrl: string | null;
         docsUrl: string | null;
+        clientSecretId: string | null;
+        localConfigSecretId: string | null;
         localConfig: {
             command?: string;
             arguments?: Array<string>;
@@ -7267,6 +7365,8 @@ export type CreateInternalMcpCatalogItemData = {
         serverType: 'local' | 'remote';
         serverUrl?: string | null;
         docsUrl?: string | null;
+        clientSecretId?: string | null;
+        localConfigSecretId?: string | null;
         localConfig?: {
             command?: string;
             arguments?: Array<string>;
@@ -7406,6 +7506,8 @@ export type CreateInternalMcpCatalogItemResponses = {
         serverType: 'local' | 'remote';
         serverUrl: string | null;
         docsUrl: string | null;
+        clientSecretId: string | null;
+        localConfigSecretId: string | null;
         localConfig: {
             command?: string;
             arguments?: Array<string>;
@@ -7634,6 +7736,8 @@ export type GetInternalMcpCatalogItemResponses = {
         serverType: 'local' | 'remote';
         serverUrl: string | null;
         docsUrl: string | null;
+        clientSecretId: string | null;
+        localConfigSecretId: string | null;
         localConfig: {
             command?: string;
             arguments?: Array<string>;
@@ -7711,6 +7815,8 @@ export type UpdateInternalMcpCatalogItemData = {
         serverType?: 'local' | 'remote';
         serverUrl?: string | null;
         docsUrl?: string | null;
+        clientSecretId?: string | null;
+        localConfigSecretId?: string | null;
         localConfig?: {
             command?: string;
             arguments?: Array<string>;
@@ -7852,6 +7958,8 @@ export type UpdateInternalMcpCatalogItemResponses = {
         serverType: 'local' | 'remote';
         serverUrl: string | null;
         docsUrl: string | null;
+        clientSecretId: string | null;
+        localConfigSecretId: string | null;
         localConfig: {
             command?: string;
             arguments?: Array<string>;
@@ -9726,9 +9834,7 @@ export type AddMcpServerInstallationRequestNoteResponse = AddMcpServerInstallati
 export type GetMcpServersData = {
     body?: never;
     path?: never;
-    query?: {
-        authType?: 'personal' | 'team';
-    };
+    query?: never;
     url: '/api/mcp_server';
 };
 
@@ -9802,7 +9908,6 @@ export type GetMcpServersResponses = {
         serverType: 'local' | 'remote';
         secretId: string | null;
         ownerId: string | null;
-        authType: 'personal' | 'team';
         reinstallRequired: boolean;
         localInstallationStatus: 'idle' | 'pending' | 'discovering-tools' | 'success' | 'error';
         localInstallationError: string | null;
@@ -9833,7 +9938,6 @@ export type InstallMcpServerData = {
         catalogId: string;
         secretId?: string;
         ownerId?: string | null;
-        authType?: 'personal' | 'team';
         reinstallRequired?: boolean;
         localInstallationStatus?: 'idle' | 'pending' | 'discovering-tools' | 'success' | 'error';
         localInstallationError?: string | null;
@@ -9923,7 +10027,6 @@ export type InstallMcpServerResponses = {
         serverType: 'local' | 'remote';
         secretId: string | null;
         ownerId: string | null;
-        authType: 'personal' | 'team';
         reinstallRequired: boolean;
         localInstallationStatus: 'idle' | 'pending' | 'discovering-tools' | 'success' | 'error';
         localInstallationError: string | null;
@@ -10106,7 +10209,6 @@ export type GetMcpServerResponses = {
         serverType: 'local' | 'remote';
         secretId: string | null;
         ownerId: string | null;
-        authType: 'personal' | 'team';
         reinstallRequired: boolean;
         localInstallationStatus: 'idle' | 'pending' | 'discovering-tools' | 'success' | 'error';
         localInstallationError: string | null;
@@ -11972,7 +12074,7 @@ export type GetRoleData = {
         /**
          * Predefined role name or custom role ID
          */
-        roleId: 'admin' | 'member' | string;
+        roleId: 'admin' | 'editor' | 'member' | string;
     };
     query?: never;
     url: '/api/roles/{roleId}';
@@ -12068,7 +12170,7 @@ export type UpdateRoleData = {
         /**
          * Predefined role name or custom role ID
          */
-        roleId: 'admin' | 'member' | string;
+        roleId: 'admin' | 'editor' | 'member' | string;
     };
     query?: never;
     url: '/api/roles/{roleId}';
@@ -13039,6 +13141,163 @@ export type RollbackPromptResponses = {
 
 export type RollbackPromptResponse = RollbackPromptResponses[keyof RollbackPromptResponses];
 
+export type GetSecretsTypeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/secrets/type';
+};
+
+export type GetSecretsTypeErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type GetSecretsTypeError = GetSecretsTypeErrors[keyof GetSecretsTypeErrors];
+
+export type GetSecretsTypeResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        type: 'DB' | 'Vault';
+        meta: {
+            [key: string]: string;
+        };
+    };
+};
+
+export type GetSecretsTypeResponse = GetSecretsTypeResponses[keyof GetSecretsTypeResponses];
+
+export type CheckSecretsConnectivityData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/secrets/check-connectivity';
+};
+
+export type CheckSecretsConnectivityErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type CheckSecretsConnectivityError = CheckSecretsConnectivityErrors[keyof CheckSecretsConnectivityErrors];
+
+export type CheckSecretsConnectivityResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        secretCount: number;
+    };
+};
+
+export type CheckSecretsConnectivityResponse = CheckSecretsConnectivityResponses[keyof CheckSecretsConnectivityResponses];
+
 export type GetPublicSsoProvidersData = {
     body?: never;
     path?: never;
@@ -13279,10 +13538,21 @@ export type GetSsoProvidersResponses = {
                 };
             };
         };
+        roleMapping?: {
+            rules?: Array<{
+                expression: string;
+                role: string;
+            }>;
+            defaultRole?: string;
+            dataSource?: 'userInfo' | 'token' | 'combined';
+            strictMode?: boolean;
+            skipRoleSync?: boolean;
+        };
         userId: string | null;
         providerId: string;
         organizationId: string | null;
         domain: string;
+        domainVerified: boolean | null;
     }>;
 };
 
@@ -13380,9 +13650,20 @@ export type CreateSsoProviderData = {
                 };
             };
         };
+        roleMapping?: {
+            rules?: Array<{
+                expression: string;
+                role: string;
+            }>;
+            defaultRole?: string;
+            dataSource?: 'userInfo' | 'token' | 'combined';
+            strictMode?: boolean;
+            skipRoleSync?: boolean;
+        };
         userId?: string | null;
         providerId: string;
         domain: string;
+        domainVerified?: boolean | null;
     };
     path?: never;
     query?: never;
@@ -13544,10 +13825,21 @@ export type CreateSsoProviderResponses = {
                 };
             };
         };
+        roleMapping?: {
+            rules?: Array<{
+                expression: string;
+                role: string;
+            }>;
+            defaultRole?: string;
+            dataSource?: 'userInfo' | 'token' | 'combined';
+            strictMode?: boolean;
+            skipRoleSync?: boolean;
+        };
         userId: string | null;
         providerId: string;
         organizationId: string | null;
         domain: string;
+        domainVerified: boolean | null;
     };
 };
 
@@ -13796,10 +14088,21 @@ export type GetSsoProviderResponses = {
                 };
             };
         };
+        roleMapping?: {
+            rules?: Array<{
+                expression: string;
+                role: string;
+            }>;
+            defaultRole?: string;
+            dataSource?: 'userInfo' | 'token' | 'combined';
+            strictMode?: boolean;
+            skipRoleSync?: boolean;
+        };
         userId: string | null;
         providerId: string;
         organizationId: string | null;
         domain: string;
+        domainVerified: boolean | null;
     };
 };
 
@@ -13897,8 +14200,19 @@ export type UpdateSsoProviderData = {
                 };
             };
         };
+        roleMapping?: {
+            rules?: Array<{
+                expression: string;
+                role: string;
+            }>;
+            defaultRole?: string;
+            dataSource?: 'userInfo' | 'token' | 'combined';
+            strictMode?: boolean;
+            skipRoleSync?: boolean;
+        };
         providerId?: string;
         domain?: string;
+        domainVerified?: boolean | null;
     };
     path: {
         id: string;
@@ -14062,10 +14376,21 @@ export type UpdateSsoProviderResponses = {
                 };
             };
         };
+        roleMapping?: {
+            rules?: Array<{
+                expression: string;
+                role: string;
+            }>;
+            defaultRole?: string;
+            dataSource?: 'userInfo' | 'token' | 'combined';
+            strictMode?: boolean;
+            skipRoleSync?: boolean;
+        };
         userId: string | null;
         providerId: string;
         organizationId: string | null;
         domain: string;
+        domainVerified: boolean | null;
     };
 };
 
@@ -14596,6 +14921,7 @@ export type GetTeamsResponses = {
             teamId: string;
             userId: string;
             role: string;
+            syncedFromSso: boolean;
             createdAt: string;
         }>;
     }>;
@@ -14690,6 +15016,7 @@ export type CreateTeamResponses = {
             teamId: string;
             userId: string;
             role: string;
+            syncedFromSso: boolean;
             createdAt: string;
         }>;
     };
@@ -14862,6 +15189,7 @@ export type GetTeamResponses = {
             teamId: string;
             userId: string;
             role: string;
+            syncedFromSso: boolean;
             createdAt: string;
         }>;
     };
@@ -14959,6 +15287,7 @@ export type UpdateTeamResponses = {
             teamId: string;
             userId: string;
             role: string;
+            syncedFromSso: boolean;
             createdAt: string;
         }>;
     };
@@ -15043,6 +15372,7 @@ export type GetTeamMembersResponses = {
         teamId: string;
         userId: string;
         role: string;
+        syncedFromSso: boolean;
         createdAt: string;
     }>;
 };
@@ -15129,6 +15459,7 @@ export type AddTeamMemberResponses = {
         teamId: string;
         userId: string;
         role: string;
+        syncedFromSso: boolean;
         createdAt: string;
     };
 };
@@ -15215,6 +15546,252 @@ export type RemoveTeamMemberResponses = {
 
 export type RemoveTeamMemberResponse = RemoveTeamMemberResponses[keyof RemoveTeamMemberResponses];
 
+export type GetTeamExternalGroupsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/teams/{id}/external-groups';
+};
+
+export type GetTeamExternalGroupsErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type GetTeamExternalGroupsError = GetTeamExternalGroupsErrors[keyof GetTeamExternalGroupsErrors];
+
+export type GetTeamExternalGroupsResponses = {
+    /**
+     * Default Response
+     */
+    200: Array<{
+        id: string;
+        teamId: string;
+        groupIdentifier: string;
+        createdAt: string;
+    }>;
+};
+
+export type GetTeamExternalGroupsResponse = GetTeamExternalGroupsResponses[keyof GetTeamExternalGroupsResponses];
+
+export type AddTeamExternalGroupData = {
+    body: {
+        groupIdentifier: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/teams/{id}/external-groups';
+};
+
+export type AddTeamExternalGroupErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type AddTeamExternalGroupError = AddTeamExternalGroupErrors[keyof AddTeamExternalGroupErrors];
+
+export type AddTeamExternalGroupResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        id: string;
+        teamId: string;
+        groupIdentifier: string;
+        createdAt: string;
+    };
+};
+
+export type AddTeamExternalGroupResponse = AddTeamExternalGroupResponses[keyof AddTeamExternalGroupResponses];
+
+export type RemoveTeamExternalGroupData = {
+    body?: never;
+    path: {
+        id: string;
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/teams/{id}/external-groups/{groupId}';
+};
+
+export type RemoveTeamExternalGroupErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type RemoveTeamExternalGroupError = RemoveTeamExternalGroupErrors[keyof RemoveTeamExternalGroupErrors];
+
+export type RemoveTeamExternalGroupResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        success: boolean;
+    };
+};
+
+export type RemoveTeamExternalGroupResponse = RemoveTeamExternalGroupResponses[keyof RemoveTeamExternalGroupResponses];
+
 export type GetTokenPricesData = {
     body?: never;
     path?: never;
@@ -15287,6 +15864,7 @@ export type GetTokenPricesResponses = {
      */
     200: Array<{
         id: string;
+        provider: string;
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -15299,6 +15877,7 @@ export type GetTokenPricesResponse = GetTokenPricesResponses[keyof GetTokenPrice
 
 export type CreateTokenPriceData = {
     body: {
+        provider: SupportedProvidersInput;
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -15373,6 +15952,7 @@ export type CreateTokenPriceResponses = {
      */
     200: {
         id: string;
+        provider: string;
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -15536,6 +16116,7 @@ export type GetTokenPriceResponses = {
      */
     200: {
         id: string;
+        provider: string;
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -15548,6 +16129,7 @@ export type GetTokenPriceResponse = GetTokenPriceResponses[keyof GetTokenPriceRe
 
 export type UpdateTokenPriceData = {
     body?: {
+        provider?: SupportedProvidersInput;
         model?: string;
         pricePerMillionInput?: string;
         pricePerMillionOutput?: string;
@@ -15624,6 +16206,7 @@ export type UpdateTokenPriceResponses = {
      */
     200: {
         id: string;
+        provider: string;
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;

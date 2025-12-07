@@ -6,6 +6,7 @@ export * as archestraApiTypes from "./hey-api/clients/api/types.gen";
 export * as archestraCatalogSdk from "./hey-api/clients/archestra-catalog/sdk.gen";
 export * as archestraCatalogTypes from "./hey-api/clients/archestra-catalog/types.gen";
 
+export * from "./model-constants";
 // Theme utilities and config
 export * from "./themes/theme-config";
 export * from "./themes/theme-utils";

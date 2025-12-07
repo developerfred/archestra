@@ -1,5 +1,5 @@
 import { ssoClient } from "@better-auth/sso/client";
-import { ac, adminRole, memberRole } from "@shared";
+import { ac, adminRole, editorRole, memberRole } from "@shared";
 import {
   adminClient,
   apiKeyClient,
@@ -7,7 +7,6 @@ import {
   organizationClient,
   twoFactorClient,
 } from "better-auth/client/plugins";
-import { nextCookies } from "better-auth/next-js";
 import { createAuthClient } from "better-auth/react";
 import config from "@/lib/config";
 
@@ -21,6 +20,7 @@ export const authClient = createAuthClient({
       },
       roles: {
         admin: adminRole,
+        editor: editorRole,
         member: memberRole,
       },
       schema: inferOrgAdditionalFields({
@@ -34,11 +34,9 @@ export const authClient = createAuthClient({
         },
       }),
     }),
-    nextCookies(),
     adminClient(),
     apiKeyClient(),
     twoFactorClient(),
-    // TODO: add this conditionally..
     ssoClient(),
   ],
   fetchOptions: {

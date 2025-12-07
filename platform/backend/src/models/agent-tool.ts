@@ -626,6 +626,21 @@ class AgentToolModel {
   }
 
   /**
+   * Delete all agent-tool assignments that use a specific MCP server as their execution source.
+   * Used when a local MCP server is deleted/uninstalled.
+   */
+  static async deleteByExecutionSourceMcpServerId(
+    mcpServerId: string,
+  ): Promise<number> {
+    const result = await db
+      .delete(schema.agentToolsTable)
+      .where(
+        eq(schema.agentToolsTable.executionSourceMcpServerId, mcpServerId),
+      );
+    return result.rowCount ?? 0;
+  }
+
+  /**
    * Clean up invalid credential sources when a user is removed from a team.
    * Sets credentialSourceMcpServerId to null for agent-tools where:
    * - The credential source is a personal token owned by the removed user
@@ -648,22 +663,17 @@ class AgentToolModel {
 
     const agentIds = agentsInTeam.map((a) => a.agentId);
 
-    // Get all personal MCP servers owned by this user
-    const userPersonalServers = await db
+    // Get all MCP servers owned by this user
+    const userServers = await db
       .select({ id: schema.mcpServersTable.id })
       .from(schema.mcpServersTable)
-      .where(
-        and(
-          eq(schema.mcpServersTable.ownerId, userId),
-          eq(schema.mcpServersTable.authType, "personal"),
-        ),
-      );
+      .where(eq(schema.mcpServersTable.ownerId, userId));
 
-    if (userPersonalServers.length === 0) {
+    if (userServers.length === 0) {
       return 0;
     }
 
-    const serverIds = userPersonalServers.map((s) => s.id);
+    const serverIds = userServers.map((s) => s.id);
 
     // For each agent, check if user still has access through other teams
     let cleanedCount = 0;

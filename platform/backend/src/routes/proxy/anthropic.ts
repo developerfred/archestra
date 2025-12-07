@@ -10,7 +10,10 @@ import getDefaultPricing from "@/default-model-prices";
 import {
   getObservableFetch,
   reportBlockedTools,
+  reportLLMCost,
   reportLLMTokens,
+  reportTimeToFirstToken,
+  reportTokensPerSecond,
 } from "@/llm-metrics";
 import {
   AgentModel,
@@ -24,7 +27,7 @@ import {
   constructResponseSchema,
   UuidIdSchema,
 } from "@/types";
-import { PROXY_API_PREFIX } from "./common";
+import { PROXY_API_PREFIX, PROXY_BODY_LIMIT } from "./common";
 import { MockAnthropicClient } from "./mock-anthropic-client";
 import * as utils from "./utils";
 
@@ -253,11 +256,17 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
       // Ensure TokenPrice records exist for both baseline and optimized models
       const baselinePricing = getDefaultPricing(baselineModel);
-      await TokenPriceModel.createIfNotExists(baselineModel, baselinePricing);
+      await TokenPriceModel.createIfNotExists(baselineModel, {
+        provider: "anthropic",
+        ...baselinePricing,
+      });
 
       if (model !== baselineModel) {
         const optimizedPricing = getDefaultPricing(model);
-        await TokenPriceModel.createIfNotExists(model, optimizedPricing);
+        await TokenPriceModel.createIfNotExists(model, {
+          provider: "anthropic",
+          ...optimizedPricing,
+        });
       }
 
       // Convert to common format and evaluate trusted data policies
@@ -306,7 +315,9 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
                   },
                 };
                 reply.raw.write(
-                  `event: content_block_delta\ndata: ${JSON.stringify(startEvent)}\n\n`,
+                  `event: content_block_delta\ndata: ${JSON.stringify(
+                    startEvent,
+                  )}\n\n`,
                 );
               }
             : undefined,
@@ -325,7 +336,9 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
                   },
                 };
                 reply.raw.write(
-                  `event: content_block_delta\ndata: ${JSON.stringify(progressEvent)}\n\n`,
+                  `event: content_block_delta\ndata: ${JSON.stringify(
+                    progressEvent,
+                  )}\n\n`,
                 );
               }
             : undefined,
@@ -377,6 +390,10 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
       );
 
       if (stream) {
+        // Track timing for TTFT and tokens/sec metrics
+        const streamStartTime = Date.now();
+        let firstChunkTime: number | undefined;
+
         // Handle streaming response with span to measure LLM call duration
         const messageStream = await utils.tracing.startActiveLlmSpan(
           "anthropic.messages",
@@ -415,6 +432,18 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
         try {
           for await (const event of messageStream) {
+            // Capture time to first token on first event
+            if (!firstChunkTime) {
+              firstChunkTime = Date.now();
+              const ttftSeconds = (firstChunkTime - streamStartTime) / 1000;
+              reportTimeToFirstToken(
+                "anthropic",
+                resolvedAgent,
+                model,
+                ttftSeconds,
+              );
+            }
+
             events.push(event);
 
             // Stream message_start event immediately (contains message metadata)
@@ -553,7 +582,9 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
               },
             };
             reply.raw.write(
-              `event: content_block_start\ndata: ${JSON.stringify(startEvent)}\n\n`,
+              `event: content_block_start\ndata: ${JSON.stringify(
+                startEvent,
+              )}\n\n`,
             );
 
             const refusalEvent = {
@@ -565,7 +596,9 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
               },
             };
             reply.raw.write(
-              `event: content_block_delta\ndata: ${JSON.stringify(refusalEvent)}\n\n`,
+              `event: content_block_delta\ndata: ${JSON.stringify(
+                refusalEvent,
+              )}\n\n`,
             );
 
             const stopEvent = {
@@ -573,12 +606,15 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
               index: 0,
             };
             reply.raw.write(
-              `event: content_block_stop\ndata: ${JSON.stringify(stopEvent)}\n\n`,
+              `event: content_block_stop\ndata: ${JSON.stringify(
+                stopEvent,
+              )}\n\n`,
             );
             reportBlockedTools(
               "anthropic",
               resolvedAgent,
               accumulatedToolCalls.length,
+              model,
             );
           } else {
             // Tool calls are allowed - stream them now
@@ -663,7 +699,9 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
           };
           fastify.log.info("Streaming message_delta event");
           reply.raw.write(
-            `event: message_delta\ndata: ${JSON.stringify(messageDeltaEvent)}\n\n`,
+            `event: message_delta\ndata: ${JSON.stringify(
+              messageDeltaEvent,
+            )}\n\n`,
           );
           1;
 
@@ -726,7 +764,20 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
             const tokenUsage = utils.adapters.anthropic.getUsageTokens(usage);
 
             if (messageStartEvent.message.usage) {
-              reportLLMTokens("anthropic", resolvedAgent, tokenUsage);
+              reportLLMTokens("anthropic", resolvedAgent, tokenUsage, model);
+
+              // Report tokens per second if we have output tokens and timing
+              if (tokenUsage.output && firstChunkTime) {
+                const totalDurationSeconds =
+                  (Date.now() - streamStartTime) / 1000;
+                reportTokensPerSecond(
+                  "anthropic",
+                  resolvedAgent,
+                  model,
+                  tokenUsage.output,
+                  totalDurationSeconds,
+                );
+              }
             }
 
             const baselineCost = await utils.costOptimization.calculateCost(
@@ -751,6 +802,12 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
                 outputTokens: tokenUsage.output,
               },
               "anthropic proxy routes: handle messages: costs",
+            );
+            reportLLMCost(
+              "anthropic",
+              resolvedAgent,
+              model,
+              costAfterModelOptimization,
             );
 
             // Record the interaction
@@ -829,7 +886,12 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
               },
             ];
 
-            reportBlockedTools("anthropic", resolvedAgent, toolCalls.length);
+            reportBlockedTools(
+              "anthropic",
+              resolvedAgent,
+              toolCalls.length,
+              model,
+            );
 
             // Extract token usage and store the interaction with refusal
             const tokenUsage = response.usage
@@ -848,6 +910,12 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
                 tokenUsage.input,
                 tokenUsage.output,
               );
+            reportLLMCost(
+              "anthropic",
+              resolvedAgent,
+              model,
+              costAfterModelOptimization,
+            );
 
             await InteractionModel.create({
               agentId: resolvedAgentId,
@@ -894,6 +962,12 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
             tokenUsage.input,
             tokenUsage.output,
           );
+        reportLLMCost(
+          "anthropic",
+          resolvedAgent,
+          model,
+          costAfterModelOptimization,
+        );
 
         await InteractionModel.create({
           agentId: resolvedAgentId,
@@ -969,7 +1043,9 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
         } else {
           // Headers not sent yet, send as SSE format string with 200 status
           // (streaming responses need 200 OK, error is in the stream content)
-          const sseError = `event: error\ndata: ${JSON.stringify(errorEvent)}\n\n`;
+          const sseError = `event: error\ndata: ${JSON.stringify(
+            errorEvent,
+          )}\n\n`;
           return reply.status(200).send(sseError);
         }
         return reply;
@@ -992,6 +1068,7 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     `${API_PREFIX}/v1${MESSAGES_SUFFIX}`,
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         operationId: RouteId.AnthropicMessagesWithDefaultAgent,
         description: "Send a message to Anthropic using the default agent",
@@ -1020,6 +1097,7 @@ const anthropicProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     `${API_PREFIX}/:agentId/v1${MESSAGES_SUFFIX}`,
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         operationId: RouteId.AnthropicMessagesWithAgent,
         description:
