@@ -1,4 +1,5 @@
 import type { UIMessage } from "@ai-sdk/react";
+import { extractUIResourceFromOutput } from "@shared";
 import type { ChatStatus, DynamicToolUIPart, ToolUIPart } from "ai";
 import Image from "next/image";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -21,11 +22,14 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
+import { McpUIResourceRenderer } from "@/components/chat/mcp-ui-resource-renderer";
 
 interface ChatMessagesProps {
   messages: UIMessage[];
   hideToolCalls?: boolean;
   status: ChatStatus;
+  onUIToolCall?: (toolName: string, params: Record<string, unknown>) => void;
+  onUIPromptSubmit?: (prompt: string) => void;
 }
 
 // Type guards for tool parts
@@ -52,6 +56,8 @@ export function ChatMessages({
   messages,
   hideToolCalls = false,
   status,
+  onUIToolCall,
+  onUIPromptSubmit,
 }: ChatMessagesProps) {
   const isStreamingStalled = useStreamingStallDetection(messages, status);
 
@@ -144,6 +150,8 @@ export function ChatMessages({
                         key={`${message.id}-${i}`}
                         toolResultPart={toolResultPart}
                         toolName={toolName}
+                        onToolCall={onUIToolCall}
+                        onPromptSubmit={onUIPromptSubmit}
                       />
                     );
                   }
@@ -246,11 +254,37 @@ function MessageTool({
   part,
   toolResultPart,
   toolName,
+  onToolCall,
+  onPromptSubmit,
 }: {
   part: ToolUIPart | DynamicToolUIPart;
   toolResultPart: ToolUIPart | DynamicToolUIPart | null;
   toolName: string;
+  onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
+  onPromptSubmit?: (prompt: string) => void;
 }) {
+  const output = toolResultPart?.output ?? part.output;
+  const uiResource = extractUIResourceFromOutput(output);
+
+  if (uiResource) {
+    return (
+      <div className="my-4">
+        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+          <span className="font-medium">{toolName}</span>
+          <span className="text-green-600 dark:text-green-400">
+            ✓ Interactive UI
+          </span>
+        </div>
+        <McpUIResourceRenderer
+          resource={uiResource.resource}
+          onToolCall={onToolCall}
+          onPromptSubmit={onPromptSubmit}
+          className="rounded-lg overflow-hidden border"
+        />
+      </div>
+    );
+  }
+
   const outputError = toolResultPart
     ? tryToExtractErrorFromOutput(toolResultPart.output)
     : tryToExtractErrorFromOutput(part.output);
@@ -284,6 +318,8 @@ function MessageTool({
             label={errorText ? "Error" : "Result"}
             output={toolResultPart.output}
             errorText={errorText}
+            onToolCall={onToolCall}
+            onPromptSubmit={onPromptSubmit}
           />
         )}
         {!toolResultPart && Boolean(part.output) && (
@@ -291,6 +327,8 @@ function MessageTool({
             label={errorText ? "Error" : "Result"}
             output={part.output}
             errorText={errorText}
+            onToolCall={onToolCall}
+            onPromptSubmit={onPromptSubmit}
           />
         )}
       </ToolContent>

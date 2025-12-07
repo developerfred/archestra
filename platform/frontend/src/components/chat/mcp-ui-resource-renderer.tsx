@@ -1,0 +1,117 @@
+"use client";
+
+import type { UIActionResult, UIResourceContent } from "@shared";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+interface UIResourceRendererComponentProps {
+  resource: UIResourceContent;
+  onUIAction?: (action: UIActionResult) => Promise<unknown>;
+  htmlProps?: {
+    style?: React.CSSProperties;
+    autoResizeIframe?: boolean | { width?: boolean; height?: boolean };
+    iframeRenderData?: Record<string, unknown>;
+  };
+}
+
+let LazyUIResourceRenderer: React.ComponentType<UIResourceRendererComponentProps> | null =
+  null;
+
+interface McpUIResourceRendererProps {
+  resource: UIResourceContent;
+  onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
+  onPromptSubmit?: (prompt: string) => void;
+  className?: string;
+  iframeRenderData?: Record<string, unknown>;
+}
+
+export function McpUIResourceRenderer({
+  resource,
+  onToolCall,
+  onPromptSubmit,
+  className,
+  iframeRenderData,
+}: McpUIResourceRendererProps) {
+  const [isLoaded, setIsLoaded] = useState(!!LazyUIResourceRenderer);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (LazyUIResourceRenderer || loadError) return;
+
+    import("@mcp-ui/client")
+      .then((mod) => {
+        LazyUIResourceRenderer = mod.UIResourceRenderer;
+        setIsLoaded(true);
+      })
+      .catch((err) => {
+        setLoadError(err.message);
+      });
+  }, [loadError]);
+
+  const handleUIAction = useCallback(
+    async (action: UIActionResult): Promise<{ status: string }> => {
+      switch (action.type) {
+        case "tool":
+          onToolCall?.(action.payload.toolName, action.payload.params);
+          return { status: "handled" };
+
+        case "prompt":
+          onPromptSubmit?.(action.payload.prompt);
+          return { status: "handled" };
+
+        case "link":
+          window.open(action.payload.url, "_blank", "noopener,noreferrer");
+          return { status: "handled" };
+
+        case "notify":
+          toast.info(action.payload.message);
+          return { status: "handled" };
+
+        case "intent":
+          onToolCall?.(action.payload.intent, action.payload.params);
+          return { status: "handled" };
+
+        default:
+          return { status: "unhandled" };
+      }
+    },
+    [onToolCall, onPromptSubmit],
+  );
+
+  if (loadError) {
+    return (
+      <div className="p-4 border border-destructive/50 rounded-md bg-destructive/10">
+        <p className="text-sm text-destructive">
+          Failed to load UI component: {loadError}
+        </p>
+      </div>
+    );
+  }
+
+  if (!isLoaded || !LazyUIResourceRenderer) {
+    return (
+      <div className="p-4 border rounded-md animate-pulse bg-muted">
+        <div className="h-32 bg-muted-foreground/20 rounded" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <LazyUIResourceRenderer
+        resource={resource}
+        onUIAction={handleUIAction}
+        htmlProps={{
+          style: {
+            width: "100%",
+            minHeight: "200px",
+            border: "none",
+            borderRadius: "8px",
+          },
+          autoResizeIframe: { height: true },
+          iframeRenderData,
+        }}
+      />
+    </div>
+  );
+}
