@@ -1,5 +1,6 @@
 "use client";
 
+import { extractUIResourceFromOutput } from "@shared";
 import type { ToolUIPart } from "ai";
 import {
   CheckCircleIcon,
@@ -10,6 +11,8 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { useMemo } from "react";
+import { McpUIResourceRenderer } from "@/components/chat/mcp-ui-resource-renderer";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -141,6 +144,8 @@ export type ToolOutputProps = ComponentProps<"div"> & {
     role: "user" | "assistant";
     content: string | unknown;
   }>;
+  onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
+  onPromptSubmit?: (prompt: string) => void;
 };
 
 export const ToolOutput = ({
@@ -149,10 +154,36 @@ export const ToolOutput = ({
   errorText,
   label,
   conversations,
+  onToolCall,
+  onPromptSubmit,
   ...props
 }: ToolOutputProps) => {
+  const uiResource = useMemo(
+    () => extractUIResourceFromOutput(output),
+    [output],
+  );
+
   if (!(output || errorText || conversations)) {
     return null;
+  }
+
+  if (uiResource) {
+    return (
+      <div className={cn("space-y-2 p-4", className)} {...props}>
+        <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide flex items-center gap-2">
+          {label ?? "Result"}
+          <span className="text-green-600 dark:text-green-400 font-normal normal-case">
+            ✓ Interactive UI
+          </span>
+        </h4>
+        <McpUIResourceRenderer
+          resource={uiResource.resource}
+          onToolCall={onToolCall}
+          onPromptSubmit={onPromptSubmit}
+          className="rounded-md overflow-hidden"
+        />
+      </div>
+    );
   }
 
   // Render conversations as chat bubbles if provided
