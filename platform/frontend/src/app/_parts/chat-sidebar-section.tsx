@@ -114,8 +114,8 @@ export function ChatSidebarSection() {
 
     await deleteConversationMutation.mutateAsync(id);
   };
-
-  console.log(visibleChats);
+  // ! Don't use console.
+  // console.log(visibleChats);
 
   return (
     <SidebarGroup className="px-4 py-0">
