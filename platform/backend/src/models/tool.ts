@@ -340,7 +340,23 @@ class ToolModel {
 
     // Group tools by catalogId (all tools should have the same catalogId in practice)
     const catalogId = tools[0].catalogId;
+    const mcpServerId = tools[0].mcpServerId;
     const toolNames = tools.map((t) => t.name);
+
+    // Update existing tools to set mcpServerId if not already set
+    await db
+      .update(schema.toolsTable)
+      .set({
+        mcpServerId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.toolsTable.catalogId, catalogId),
+          isNull(schema.toolsTable.mcpServerId),
+          isNull(schema.toolsTable.agentId),
+        ),
+      );
 
     // Fetch all existing tools for this catalog in a single query
     const existingTools = await db
