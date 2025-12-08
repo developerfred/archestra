@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { InstallationSelect } from "@/components/installation-select";
-import { TokenSelect } from "@/components/token-select";
+import {
+  DYNAMIC_CREDENTIAL_VALUE,
+  TokenSelect,
+} from "@/components/token-select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -19,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   useAllProfileTools,
   useAssignTool,
@@ -58,19 +62,55 @@ export function AssignToolsDialog({
       credentialsSourceId?: string;
       executionSourceId?: string;
       agentToolId?: string;
+      useDynamicTeamCredential?: boolean;
     }[]
   >([]);
 
-  // Track search query
+  // Track search query and origin filter
   const [searchQuery, setSearchQuery] = useState("");
+  const [originFilter, setOriginFilter] = useState("all");
 
-  // Filter tools based on search query
+  // Get unique origins from internal MCP catalog that have at least one tool
+  const uniqueOrigins = useMemo(() => {
+    // Get catalog IDs that have tools
+    const catalogIdsWithTools = new Set(
+      mcpTools.map((tool) => tool.catalogId).filter(Boolean),
+    );
+
+    const origins: { id: string; name: string }[] = [];
+    internalMcpCatalogItems?.forEach((item) => {
+      if (catalogIdsWithTools.has(item.id)) {
+        origins.push({ id: item.id, name: item.name });
+      }
+    });
+    return origins;
+  }, [internalMcpCatalogItems, mcpTools]);
+
+  // Get selected catalog item and determine if it's a local server
+  const selectedCatalogItem = useMemo(() => {
+    if (originFilter === "all") return null;
+    return internalMcpCatalogItems?.find((item) => item.id === originFilter);
+  }, [originFilter, internalMcpCatalogItems]);
+
+  const isLocalServerForBulk = selectedCatalogItem?.serverType === "local";
+
+  // Filter tools based on search query and origin
   const filteredTools = useMemo(() => {
-    if (!searchQuery.trim()) return mcpTools;
+    let tools = mcpTools;
 
-    const query = searchQuery.toLowerCase();
-    return mcpTools.filter((tool) => tool.name.toLowerCase().includes(query));
-  }, [mcpTools, searchQuery]);
+    // Filter by origin if not "all"
+    if (originFilter !== "all") {
+      tools = tools.filter((tool) => tool.catalogId === originFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      tools = tools.filter((tool) => tool.name.toLowerCase().includes(query));
+    }
+
+    return tools;
+  }, [mcpTools, searchQuery, originFilter]);
 
   // Initialize selected tools when agent tools load
   useEffect(() => {
@@ -81,6 +121,7 @@ export function AssignToolsDialog({
           credentialsSourceId: at.credentialSourceMcpServerId || undefined,
           executionSourceId: at.executionSourceMcpServerId || undefined,
           agentToolId: at.id,
+          useDynamicTeamCredential: at.useDynamicTeamCredential || false,
         })),
       );
     }
@@ -110,9 +151,18 @@ export function AssignToolsDialog({
 
   const handleCredentialsSourceChange = useCallback(
     (toolId: string, credentialsSourceId?: string) => {
+      const isDynamic = credentialsSourceId === DYNAMIC_CREDENTIAL_VALUE;
       setSelectedTools((prev) => {
         return prev.map((tool) =>
-          tool.toolId === toolId ? { ...tool, credentialsSourceId } : tool,
+          tool.toolId === toolId
+            ? {
+                ...tool,
+                credentialsSourceId: isDynamic
+                  ? undefined
+                  : credentialsSourceId,
+                useDynamicTeamCredential: isDynamic,
+              }
+            : tool,
         );
       });
     },
@@ -121,13 +171,68 @@ export function AssignToolsDialog({
 
   const handleExecutionSourceChange = useCallback(
     (toolId: string, executionSourceId?: string) => {
+      const isDynamic = executionSourceId === DYNAMIC_CREDENTIAL_VALUE;
       setSelectedTools((prev) => {
         return prev.map((tool) =>
-          tool.toolId === toolId ? { ...tool, executionSourceId } : tool,
+          tool.toolId === toolId
+            ? {
+                ...tool,
+                executionSourceId: isDynamic ? undefined : executionSourceId,
+                useDynamicTeamCredential: isDynamic,
+              }
+            : tool,
         );
       });
     },
     [],
+  );
+
+  // Handle bulk credential change for all visible tools
+  const handleBulkCredentialChange = useCallback(
+    (credentialId: string | null) => {
+      if (!credentialId || originFilter === "all") return;
+
+      const isDynamic = credentialId === DYNAMIC_CREDENTIAL_VALUE;
+
+      // Get all visible tool IDs (filtered by current origin and search)
+      const visibleToolIds = new Set(filteredTools.map((t) => t.id));
+
+      setSelectedTools((prev) => {
+        // Update credentials for visible tools that are selected
+        const updated = prev.map((tool) => {
+          if (!visibleToolIds.has(tool.toolId)) return tool;
+
+          if (isLocalServerForBulk) {
+            return {
+              ...tool,
+              executionSourceId: isDynamic ? undefined : credentialId,
+              useDynamicTeamCredential: isDynamic,
+            };
+          }
+          return {
+            ...tool,
+            credentialsSourceId: isDynamic ? undefined : credentialId,
+            useDynamicTeamCredential: isDynamic,
+          };
+        });
+
+        // Also add any visible tools that aren't yet selected
+        const selectedToolIds = new Set(prev.map((t) => t.toolId));
+        const newTools = filteredTools
+          .filter((t) => !selectedToolIds.has(t.id))
+          .map((t) => ({
+            toolId: t.id,
+            credentialsSourceId:
+              isLocalServerForBulk || isDynamic ? undefined : credentialId,
+            executionSourceId:
+              isLocalServerForBulk && !isDynamic ? credentialId : undefined,
+            useDynamicTeamCredential: isDynamic,
+          }));
+
+        return [...updated, ...newTools];
+      });
+    },
+    [originFilter, filteredTools, isLocalServerForBulk],
   );
 
   const handleSave = useCallback(async () => {
@@ -152,7 +257,9 @@ export function AssignToolsDialog({
         (current.credentialSourceMcpServerId !==
           (tool.credentialsSourceId || null) ||
           current.executionSourceMcpServerId !==
-            (tool.executionSourceId || null))
+            (tool.executionSourceId || null) ||
+          current.useDynamicTeamCredential !==
+            (tool.useDynamicTeamCredential || false))
       );
     });
 
@@ -164,6 +271,7 @@ export function AssignToolsDialog({
           toolId: tool.toolId,
           credentialSourceMcpServerId: tool.credentialsSourceId || null,
           executionSourceMcpServerId: tool.executionSourceId || null,
+          useDynamicTeamCredential: tool.useDynamicTeamCredential || false,
         });
       }
 
@@ -182,6 +290,7 @@ export function AssignToolsDialog({
             id: tool.agentToolId,
             credentialSourceMcpServerId: tool.credentialsSourceId || null,
             executionSourceMcpServerId: tool.executionSourceId || null,
+            useDynamicTeamCredential: tool.useDynamicTeamCredential || false,
           });
         }
       }
@@ -223,14 +332,30 @@ export function AssignToolsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search tools by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+        <div className="space-y-3">
+          <SearchableSelect
+            value={originFilter}
+            onValueChange={setOriginFilter}
+            placeholder="Filter by Origin"
+            items={[
+              { value: "all", label: "All Origins" },
+              ...uniqueOrigins.map((origin) => ({
+                value: origin.id,
+                label: origin.name,
+              })),
+            ]}
+            className="w-full"
           />
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search tools by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 -mr-2">
@@ -253,11 +378,21 @@ export function AssignToolsDialog({
               <Search className="mb-4 h-12 w-12 text-muted-foreground/50" />
               <h3 className="mb-2 text-lg font-semibold">No tools found</h3>
               <p className="mb-4 text-sm text-muted-foreground">
-                No tools match "{searchQuery}". Try adjusting your search.
+                {searchQuery || originFilter !== "all"
+                  ? "No tools match your filters. Try adjusting your search or origin filter."
+                  : "No tools available."}
               </p>
-              <Button variant="outline" onClick={() => setSearchQuery("")}>
-                Clear search
-              </Button>
+              {(searchQuery || originFilter !== "all") && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setOriginFilter("all");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -291,6 +426,14 @@ export function AssignToolsDialog({
                           (t) => t.toolId === tool.id,
                         );
 
+                        // Determine value to show - use dynamic constant if useDynamicTeamCredential is true
+                        const displayValue =
+                          selectedTool?.useDynamicTeamCredential
+                            ? DYNAMIC_CREDENTIAL_VALUE
+                            : isLocalServer
+                              ? selectedTool?.executionSourceId
+                              : selectedTool?.credentialsSourceId;
+
                         return (
                           <div className="flex flex-col gap-1 mt-4">
                             {isLocalServer ? (
@@ -306,9 +449,7 @@ export function AssignToolsDialog({
                                       executionSourceId ?? undefined,
                                     )
                                   }
-                                  value={
-                                    selectedTool?.executionSourceId ?? undefined
-                                  }
+                                  value={displayValue ?? undefined}
                                   className="mb-4"
                                   shouldSetDefaultValue
                                 />
@@ -326,10 +467,7 @@ export function AssignToolsDialog({
                                       credentialsSourceId ?? undefined,
                                     )
                                   }
-                                  value={
-                                    selectedTool?.credentialsSourceId ??
-                                    undefined
-                                  }
+                                  value={displayValue ?? undefined}
                                   className="mb-4"
                                   shouldSetDefaultValue
                                 />
@@ -354,6 +492,35 @@ export function AssignToolsDialog({
           )}
         </div>
 
+        {originFilter !== "all" && filteredTools.length > 0 && (
+          <div className="pt-4 border-t">
+            <Label className="text-md font-medium mb-1">
+              Bulk assign credential
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Select a credential to apply to all {filteredTools.length} visible
+              tool{filteredTools.length !== 1 ? "s" : ""}
+            </p>
+            {isLocalServerForBulk ? (
+              <InstallationSelect
+                catalogId={originFilter}
+                onValueChange={handleBulkCredentialChange}
+                value={undefined}
+                className="w-full"
+                shouldSetDefaultValue={false}
+              />
+            ) : (
+              <TokenSelect
+                catalogId={originFilter}
+                onValueChange={handleBulkCredentialChange}
+                value={undefined}
+                className="w-full"
+                shouldSetDefaultValue={false}
+              />
+            )}
+          </div>
+        )}
+
         <DialogFooter>
           <Button
             variant="outline"
@@ -368,6 +535,9 @@ export function AssignToolsDialog({
               isLoading ||
               isSaving ||
               selectedTools.some((tool) => {
+                // If using dynamic credential, it's valid
+                if (tool.useDynamicTeamCredential) return false;
+
                 const mcpTool = mcpTools.find((t) => t.id === tool.toolId);
                 const mcpCatalogItem = internalMcpCatalogItems?.find(
                   (item) => item.id === mcpTool?.catalogId,

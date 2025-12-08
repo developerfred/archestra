@@ -293,6 +293,14 @@ const oauthRoutes: FastifyPluginAsyncZod = async (fastify) => {
       let clientId = oauthConfig.client_id;
       let clientSecret = oauthConfig.client_secret;
 
+      logger.info(
+        {
+          catalogId: catalogItem.id,
+          hasClientSecret: !!clientSecret,
+        },
+        "OAuth init - using client_secret",
+      );
+
       // Discover actual scopes from the OAuth server (like desktop app does)
       const discoveredScopes = await discoverScopes(
         oauthConfig.server_url,
@@ -643,14 +651,17 @@ const oauthRoutes: FastifyPluginAsyncZod = async (fastify) => {
       }
 
       // Create secret entry with the OAuth tokens
-      const secret = await secretManager.createSecret({
-        access_token: tokenData.access_token,
-        ...(tokenData.refresh_token && {
-          refresh_token: tokenData.refresh_token,
-        }),
-        ...(tokenData.expires_in && { expires_in: tokenData.expires_in }),
-        token_type: "Bearer",
-      });
+      const secret = await secretManager.createSecret(
+        {
+          access_token: tokenData.access_token,
+          ...(tokenData.refresh_token && {
+            refresh_token: tokenData.refresh_token,
+          }),
+          ...(tokenData.expires_in && { expires_in: tokenData.expires_in }),
+          token_type: "Bearer",
+        },
+        `${catalogItem.name}-oauth`,
+      );
 
       // Clean up used state
       oauthStateStore.delete(state);

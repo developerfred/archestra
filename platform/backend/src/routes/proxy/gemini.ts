@@ -8,12 +8,13 @@ import { AgentModel, InteractionModel, LimitValidationService } from "@/models";
 
 import {
   type Agent,
+  ApiError,
   constructResponseSchema,
   ErrorResponsesSchema,
   Gemini,
   UuidIdSchema,
 } from "@/types";
-import { PROXY_API_PREFIX } from "./common";
+import { PROXY_API_PREFIX, PROXY_BODY_LIMIT } from "./common";
 import * as utils from "./utils";
 
 /**
@@ -258,12 +259,10 @@ const geminiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
         // reply.raw.end();
         // return reply;
 
-        return reply.code(400).send({
-          error: {
-            message: "Streaming is not supported for Anthropic. Coming soon!",
-            type: "not_supported",
-          },
-        });
+        throw new ApiError(
+          400,
+          "Streaming is not supported for Gemini. Coming soon!",
+        );
       } else {
         // Non-streaming response with span to measure LLM call duration
         const response = await utils.tracing.startActiveLlmSpan(
@@ -376,6 +375,7 @@ const geminiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     generateRouteEndpoint("generateContent"),
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         description: "Generate content using Gemini (default agent)",
         summary: "Generate content using Gemini",
@@ -408,6 +408,7 @@ const geminiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     generateRouteEndpoint("streamGenerateContent"),
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         description: "Stream generated content using Gemini (default agent)",
         summary: "Stream generated content using Gemini",
@@ -439,6 +440,7 @@ const geminiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     generateRouteEndpoint("generateContent", true),
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         description: "Generate content using Gemini with specific agent",
         summary: "Generate content using Gemini (specific agent)",
@@ -472,6 +474,7 @@ const geminiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     generateRouteEndpoint("streamGenerateContent", true),
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         description:
           "Stream generated content using Gemini with specific agent",

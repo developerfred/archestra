@@ -9,7 +9,10 @@ import getDefaultPricing from "@/default-model-prices";
 import {
   getObservableFetch,
   reportBlockedTools,
+  reportLLMCost,
   reportLLMTokens,
+  reportTimeToFirstToken,
+  reportTokensPerSecond,
 } from "@/llm-metrics";
 import {
   AgentModel,
@@ -23,7 +26,7 @@ import {
   OpenAi,
   UuidIdSchema,
 } from "@/types";
-import { PROXY_API_PREFIX } from "./common";
+import { PROXY_API_PREFIX, PROXY_BODY_LIMIT } from "./common";
 import { MockOpenAIClient } from "./mock-openai-client";
 import * as utils from "./utils";
 
@@ -233,11 +236,17 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
       // Ensure TokenPrice records exist for both baseline and optimized models
       const baselinePricing = getDefaultPricing(baselineModel);
-      await TokenPriceModel.createIfNotExists(baselineModel, baselinePricing);
+      await TokenPriceModel.createIfNotExists(baselineModel, {
+        provider: "openai",
+        ...baselinePricing,
+      });
 
       if (model !== baselineModel) {
         const optimizedPricing = getDefaultPricing(model);
-        await TokenPriceModel.createIfNotExists(model, optimizedPricing);
+        await TokenPriceModel.createIfNotExists(model, {
+          provider: "openai",
+          ...optimizedPricing,
+        });
       }
 
       // Convert to common format and evaluate trusted data policies
@@ -346,6 +355,10 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
       );
 
       if (stream) {
+        // Track timing for TTFT and tokens/sec metrics
+        const streamStartTime = Date.now();
+        let firstChunkTime: number | undefined;
+
         // Handle streaming response with span to measure LLM call duration
         const streamingResponse = await utils.tracing.startActiveLlmSpan(
           "openai.chat.completions",
@@ -388,6 +401,18 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
         try {
           for await (const chunk of streamingResponse) {
+            // Capture time to first token on first chunk
+            if (!firstChunkTime) {
+              firstChunkTime = Date.now();
+              const ttftSeconds = (firstChunkTime - streamStartTime) / 1000;
+              reportTimeToFirstToken(
+                "openai",
+                resolvedAgent,
+                model,
+                ttftSeconds,
+              );
+            }
+
             chunks.push(chunk);
 
             // Capture usage information if present
@@ -524,6 +549,7 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
                 "openai",
                 resolvedAgent,
                 accumulatedToolCalls.length,
+                model,
               );
             } else {
               // Tool calls are allowed
@@ -645,7 +671,20 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
           // Report token usage metrics for streaming (only if available)
           if (tokenUsage) {
-            reportLLMTokens("openai", resolvedAgent, tokenUsage);
+            reportLLMTokens("openai", resolvedAgent, tokenUsage, model);
+
+            // Report tokens per second if we have output tokens and timing
+            if (tokenUsage.output && firstChunkTime) {
+              const totalDurationSeconds =
+                (Date.now() - streamStartTime) / 1000;
+              reportTokensPerSecond(
+                "openai",
+                resolvedAgent,
+                model,
+                tokenUsage.output,
+                totalDurationSeconds,
+              );
+            }
           }
 
           // Calculate costs (only if we have token usage)
@@ -680,6 +719,7 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
               "No token usage available for streaming request - recording interaction without usage data",
             );
           }
+          reportLLMCost("openai", resolvedAgent, model, costAfterOptimization);
 
           // Always record the interaction
           await InteractionModel.create({
@@ -776,7 +816,7 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
             },
           ];
 
-          reportBlockedTools("openai", resolvedAgent, blockedCount);
+          reportBlockedTools("openai", resolvedAgent, blockedCount, model);
         }
         // Tool calls are allowed - return response with tool_calls to client
         // Client is responsible for executing tools via MCP Gateway and sending results back
@@ -800,6 +840,7 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
             tokenUsage.input,
             tokenUsage.output,
           );
+        reportLLMCost("openai", resolvedAgent, model, costAfterOptimization);
 
         // Store the complete interaction
         await InteractionModel.create({
@@ -848,6 +889,7 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     `${API_PREFIX}/${CHAT_COMPLETIONS_SUFFIX}`,
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         operationId: RouteId.OpenAiChatCompletionsWithDefaultAgent,
         description:
@@ -876,6 +918,7 @@ const openAiProxyRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.post(
     `${API_PREFIX}/:agentId/${CHAT_COMPLETIONS_SUFFIX}`,
     {
+      bodyLimit: PROXY_BODY_LIMIT,
       schema: {
         operationId: RouteId.OpenAiChatCompletionsWithAgent,
         description:

@@ -85,7 +85,7 @@ export function PromptLibraryGrid({
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (isFreeChatDialogOpen && !selectedProfileId) {
+    if (isFreeChatDialogOpen && !selectedProfileId && agents.length > 0) {
       setSelectedProfileId(agents[0].id);
     }
   }, [isFreeChatDialogOpen, agents, selectedProfileId]);
@@ -120,7 +120,7 @@ export function PromptLibraryGrid({
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 w-full">
+    <div>
       {/* Search Bar */}
       <div className="mb-6 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -140,10 +140,10 @@ export function PromptLibraryGrid({
           permissions={{ conversation: ["create"] }}
           noPermissionHandle="tooltip"
         >
-          {({ isDisabled }) => {
+          {({ hasPermission }) => {
             return (
               <Card
-                className={`h-[155px] justify-center items-center px-0 py-2 border-2 border-green-500 hover:border-green-600 cursor-pointer transition-colors bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 ${isDisabled ? "opacity-50 pointer-events-none" : ""}`}
+                className={`h-[155px] justify-center items-center px-0 py-2 border-2 border-green-500 hover:border-green-600 cursor-pointer transition-colors bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 ${hasPermission === false ? "opacity-50 pointer-events-none" : ""}`}
                 onClick={() => setIsFreeChatDialogOpen(true)}
               >
                 <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300 text-base">
@@ -167,7 +167,7 @@ export function PromptLibraryGrid({
               permissions={{ conversation: ["create"] }}
               noPermissionHandle="tooltip"
             >
-              {({ isDisabled }) => {
+              {({ hasPermission }) => {
                 return (
                   <PromptTile
                     key={prompt.id}
@@ -177,7 +177,7 @@ export function PromptLibraryGrid({
                     onEdit={onEdit}
                     onDelete={setPromptToDelete}
                     onViewVersionHistory={onViewVersionHistory}
-                    disabled={isDisabled}
+                    disabled={hasPermission === false}
                   />
                 );
               }}
