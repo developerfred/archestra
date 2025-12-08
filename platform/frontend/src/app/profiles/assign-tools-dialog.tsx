@@ -156,12 +156,12 @@ export function AssignToolsDialog({
         return prev.map((tool) =>
           tool.toolId === toolId
             ? {
-                ...tool,
-                credentialsSourceId: isDynamic
-                  ? undefined
-                  : credentialsSourceId,
-                useDynamicTeamCredential: isDynamic,
-              }
+              ...tool,
+              credentialsSourceId: isDynamic
+                ? undefined
+                : credentialsSourceId,
+              useDynamicTeamCredential: isDynamic,
+            }
             : tool,
         );
       });
@@ -176,10 +176,10 @@ export function AssignToolsDialog({
         return prev.map((tool) =>
           tool.toolId === toolId
             ? {
-                ...tool,
-                executionSourceId: isDynamic ? undefined : executionSourceId,
-                useDynamicTeamCredential: isDynamic,
-              }
+              ...tool,
+              executionSourceId: isDynamic ? undefined : executionSourceId,
+              useDynamicTeamCredential: isDynamic,
+            }
             : tool,
         );
       });
@@ -257,9 +257,9 @@ export function AssignToolsDialog({
         (current.credentialSourceMcpServerId !==
           (tool.credentialsSourceId || null) ||
           current.executionSourceMcpServerId !==
-            (tool.executionSourceId || null) ||
+          (tool.executionSourceId || null) ||
           current.useDynamicTeamCredential !==
-            (tool.useDynamicTeamCredential || false))
+          (tool.useDynamicTeamCredential || false))
       );
     });
 
@@ -319,7 +319,7 @@ export function AssignToolsDialog({
           <DialogDescription>
             Select which MCP server tools this profile can access.
             <br />
-            <div className="text-muted-foreground mt-2">
+            <span className="text-muted-foreground mt-2">
               Don't see the tool you need? Go to{" "}
               <Link
                 href="/mcp-catalog/registry"
@@ -328,7 +328,7 @@ export function AssignToolsDialog({
                 MCP Registry
               </Link>{" "}
               to install an MCP server.
-            </div>
+            </span>
           </DialogDescription>
         </DialogHeader>
 
