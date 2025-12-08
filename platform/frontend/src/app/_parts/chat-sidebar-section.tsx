@@ -134,8 +134,6 @@ export function ChatSidebarSection() {
 
     await deleteConversationMutation.mutateAsync(id);
   };
-  // ! Don't use console.
-  // console.log(visibleChats);
 
   const handleRegenerateTitle = async (id: string) => {
     // Mark as regenerating (shows loading state until new title arrives)
