@@ -355,6 +355,7 @@ class ToolModel {
           eq(schema.toolsTable.catalogId, catalogId),
           isNull(schema.toolsTable.mcpServerId),
           isNull(schema.toolsTable.agentId),
+          inArray(schema.toolsTable.name, toolNames),
         ),
       );
 
