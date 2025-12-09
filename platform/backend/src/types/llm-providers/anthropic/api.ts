@@ -94,5 +94,11 @@ export const MessagesHeadersSchema = z
       .describe("The user agent of the client"),
     "anthropic-version": z.string(),
     "x-api-key": z.string(),
+    "x-archestra-agent-id": z
+      .string()
+      .optional()
+      .describe(
+        "Optional external agent ID for tracking interactions across systems",
+      ),
   })
   .describe(`https://docs.claude.com/en/api/messages#parameter-anthropic-beta`);

@@ -280,4 +280,10 @@ https://ai.google.dev/api/generate-content#v1beta.GenerateContentResponse
 export const GenerateContentHeadersSchema = z.object({
   "user-agent": z.string().optional().describe("The user agent of the client"),
   "x-goog-api-key": z.string().describe("API key for Google Gemini"),
+  "x-archestra-agent-id": z
+    .string()
+    .optional()
+    .describe(
+      "Optional external agent ID for tracking interactions across systems",
+    ),
 });

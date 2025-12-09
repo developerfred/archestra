@@ -100,4 +100,10 @@ export const ChatCompletionsHeadersSchema = z.object({
     .string()
     .describe("Bearer token for OpenAI")
     .transform((authorization) => authorization.replace("Bearer ", "")),
+  "x-archestra-agent-id": z
+    .string()
+    .optional()
+    .describe(
+      "Optional external agent ID for tracking interactions across systems",
+    ),
 });
