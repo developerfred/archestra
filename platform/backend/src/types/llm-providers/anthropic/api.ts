@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MessageContentBlockSchema, MessageParamSchema } from "./messages";
 import { ToolSchema } from "./tools";
+import { commonHeaders } from "../common";
 
 const ToolChoiceAutoSchema = z.object({
   type: z.enum(["auto"]),
@@ -94,11 +95,6 @@ export const MessagesHeadersSchema = z
       .describe("The user agent of the client"),
     "anthropic-version": z.string(),
     "x-api-key": z.string(),
-    "x-archestra-agent-id": z
-      .string()
-      .optional()
-      .describe(
-        "Optional external agent ID for tracking interactions across systems",
-      ),
+    ...commonHeaders,
   })
   .describe(`https://docs.claude.com/en/api/messages#parameter-anthropic-beta`);
