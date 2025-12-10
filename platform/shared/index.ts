@@ -1,4 +1,3 @@
-export * from "./access-control";
 export * from "./consts";
 export { client as archestraApiClient } from "./hey-api/clients/api/client.gen";
 export * as archestraApiSdk from "./hey-api/clients/api/sdk.gen";
@@ -7,6 +6,9 @@ export * as archestraCatalogSdk from "./hey-api/clients/archestra-catalog/sdk.ge
 export * as archestraCatalogTypes from "./hey-api/clients/archestra-catalog/types.gen";
 
 export * from "./model-constants";
+export * from "./permission.types";
+export * from "./roles";
+export * from "./routes";
 // Theme utilities and config
 export * from "./themes/theme-config";
 export * from "./themes/theme-utils";
