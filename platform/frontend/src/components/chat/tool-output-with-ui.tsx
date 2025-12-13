@@ -10,6 +10,7 @@ interface ToolOutputWithUIProps {
   errorText?: string;
   onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onPromptSubmit?: (prompt: string) => void;
+  onIntent?: (intent: string, params: Record<string, unknown>) => void;
 }
 
 export function ToolOutputWithUI({
@@ -18,6 +19,7 @@ export function ToolOutputWithUI({
   errorText,
   onToolCall,
   onPromptSubmit,
+  onIntent,
 }: ToolOutputWithUIProps) {
   const uiResource = useMemo(
     () => extractUIResourceFromOutput(output),
@@ -45,6 +47,7 @@ export function ToolOutputWithUI({
           resource={uiResource.resource}
           onToolCall={onToolCall}
           onPromptSubmit={onPromptSubmit}
+          onIntent={onIntent}
           className="mt-2 rounded-lg overflow-hidden"
         />
       </div>

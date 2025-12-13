@@ -30,6 +30,7 @@ interface ChatMessagesProps {
   status: ChatStatus;
   onUIToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onUIPromptSubmit?: (prompt: string) => void;
+  onUIIntent?: (intent: string, params: Record<string, unknown>) => void;
 }
 
 // Type guards for tool parts
@@ -58,6 +59,7 @@ export function ChatMessages({
   status,
   onUIToolCall,
   onUIPromptSubmit,
+  onUIIntent,
 }: ChatMessagesProps) {
   const isStreamingStalled = useStreamingStallDetection(messages, status);
 
@@ -152,6 +154,7 @@ export function ChatMessages({
                         toolName={toolName}
                         onToolCall={onUIToolCall}
                         onPromptSubmit={onUIPromptSubmit}
+                        onIntent={onUIIntent}
                       />
                     );
                   }
@@ -256,12 +259,14 @@ function MessageTool({
   toolName,
   onToolCall,
   onPromptSubmit,
+  onIntent,
 }: {
   part: ToolUIPart | DynamicToolUIPart;
   toolResultPart: ToolUIPart | DynamicToolUIPart | null;
   toolName: string;
   onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onPromptSubmit?: (prompt: string) => void;
+  onIntent?: (intent: string, params: Record<string, unknown>) => void;
 }) {
   const output = toolResultPart?.output ?? part.output;
   const uiResource = extractUIResourceFromOutput(output);
@@ -279,6 +284,7 @@ function MessageTool({
           resource={uiResource.resource}
           onToolCall={onToolCall}
           onPromptSubmit={onPromptSubmit}
+          onIntent={onIntent}
           className="rounded-lg overflow-hidden border"
         />
       </div>
@@ -320,6 +326,7 @@ function MessageTool({
             errorText={errorText}
             onToolCall={onToolCall}
             onPromptSubmit={onPromptSubmit}
+            onIntent={onIntent}
           />
         )}
         {!toolResultPart && Boolean(part.output) && (
@@ -329,6 +336,7 @@ function MessageTool({
             errorText={errorText}
             onToolCall={onToolCall}
             onPromptSubmit={onPromptSubmit}
+            onIntent={onIntent}
           />
         )}
       </ToolContent>

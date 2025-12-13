@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { CodeBlock } from "./code-block";
+import { McpUIResourceRenderer } from "@/components/chat/mcp-ui-resource-renderer";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
@@ -179,6 +180,7 @@ export type ToolOutputProps = ComponentProps<"div"> & {
   }>;
   onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onPromptSubmit?: (prompt: string) => void;
+  onIntent?: (intent: string, params: Record<string, unknown>) => void;
 };
 
 export const ToolOutput = ({
@@ -189,9 +191,11 @@ export const ToolOutput = ({
   conversations,
   onToolCall,
   onPromptSubmit,
+  onIntent,
   ...props
 }: ToolOutputProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const uiResource = extractUIResourceFromOutput(output);
 
   if (!(output || errorText || conversations)) {
     return null;
@@ -210,6 +214,7 @@ export const ToolOutput = ({
           resource={uiResource.resource}
           onToolCall={onToolCall}
           onPromptSubmit={onPromptSubmit}
+          onIntent={onIntent}
           className="rounded-md overflow-hidden"
         />
       </div>

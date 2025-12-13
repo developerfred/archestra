@@ -21,6 +21,7 @@ interface McpUIResourceRendererProps {
   resource: UIResourceContent;
   onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onPromptSubmit?: (prompt: string) => void;
+  onIntent?: (intent: string, params: Record<string, unknown>) => void;
   className?: string;
   iframeRenderData?: Record<string, unknown>;
 }
@@ -29,6 +30,7 @@ export function McpUIResourceRenderer({
   resource,
   onToolCall,
   onPromptSubmit,
+  onIntent,
   className,
   iframeRenderData,
 }: McpUIResourceRendererProps) {
@@ -68,14 +70,14 @@ export function McpUIResourceRenderer({
           return { status: "handled" };
 
         case "intent":
-          onToolCall?.(action.payload.intent, action.payload.params);
+          onIntent?.(action.payload.intent, action.payload.params);
           return { status: "handled" };
 
         default:
           return { status: "unhandled" };
       }
     },
-    [onToolCall, onPromptSubmit],
+    [onToolCall, onPromptSubmit, onIntent],
   );
 
   if (loadError) {
@@ -90,7 +92,10 @@ export function McpUIResourceRenderer({
 
   if (!isLoaded || !LazyUIResourceRenderer) {
     return (
-      <div className="p-4 border rounded-md animate-pulse bg-muted">
+      <div
+        className="p-4 border rounded-md animate-pulse bg-muted"
+        data-testid="loading-skeleton"
+      >
         <div className="h-32 bg-muted-foreground/20 rounded" />
       </div>
     );

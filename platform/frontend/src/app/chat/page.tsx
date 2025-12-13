@@ -359,6 +359,55 @@ export default function ChatPage() {
     [sendMessage, status],
   );
 
+  const onUIPromptSubmit = useCallback(
+    (prompt: string) => {
+      if (!sendMessage || status === "submitted" || status === "streaming") {
+        return;
+      }
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text: prompt }],
+      });
+    },
+    [sendMessage, status],
+  );
+
+  const onUIToolCall = useCallback(
+    (toolName: string, params: Record<string, unknown>) => {
+      if (!sendMessage || status === "submitted" || status === "streaming") {
+        return;
+      }
+      sendMessage({
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: `Tool call: ${toolName}(${JSON.stringify(params)})`,
+          },
+        ],
+      });
+    },
+    [sendMessage, status],
+  );
+
+  const onUIIntent = useCallback(
+    (intent: string, params: Record<string, unknown>) => {
+      if (!sendMessage || status === "submitted" || status === "streaming") {
+        return;
+      }
+      sendMessage({
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: `Intent: ${intent}(${JSON.stringify(params)})`,
+          },
+        ],
+      });
+    },
+    [sendMessage, status],
+  );
+
   // If API key is not configured, show setup message
   if (chatSettings && !chatSettings.anthropicApiKeySecretId) {
     return (
@@ -539,6 +588,9 @@ export default function ChatPage() {
               messages={messages}
               hideToolCalls={hideToolCalls}
               status={status}
+              onUIPromptSubmit={onUIPromptSubmit}
+              onUIToolCall={onUIToolCall}
+              onUIIntent={onUIIntent}
             />
           </div>
 
