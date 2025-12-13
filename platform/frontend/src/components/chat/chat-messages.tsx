@@ -254,8 +254,6 @@ function useStreamingStallDetection(
   return isStreamingStalled;
 }
 
-import { useTheme } from "next-themes";
-
 function MessageTool({
   part,
   toolResultPart,
