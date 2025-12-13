@@ -11,6 +11,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { useTheme } from "next-themes";
 import { createContext, useContext, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -195,6 +196,7 @@ export const ToolOutput = ({
   ...props
 }: ToolOutputProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { resolvedTheme } = useTheme();
   const uiResource = extractUIResourceFromOutput(output);
 
   if (!(output || errorText || conversations)) {
@@ -216,6 +218,7 @@ export const ToolOutput = ({
           onPromptSubmit={onPromptSubmit}
           onIntent={onIntent}
           className="rounded-md overflow-hidden"
+          iframeRenderData={{ theme: resolvedTheme }}
         />
       </div>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { extractUIResourceFromOutput } from "@shared/mcp-ui.types";
+import { useTheme } from "next-themes";
 import { useMemo } from "react";
 import { McpUIResourceRenderer } from "./mcp-ui-resource-renderer";
 
@@ -21,6 +22,7 @@ export function ToolOutputWithUI({
   onPromptSubmit,
   onIntent,
 }: ToolOutputWithUIProps) {
+  const { resolvedTheme } = useTheme();
   const uiResource = useMemo(
     () => extractUIResourceFromOutput(output),
     [output],
@@ -49,6 +51,7 @@ export function ToolOutputWithUI({
           onPromptSubmit={onPromptSubmit}
           onIntent={onIntent}
           className="mt-2 rounded-lg overflow-hidden"
+          iframeRenderData={{ theme: resolvedTheme }}
         />
       </div>
     );

@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import type { UIMessage } from "@ai-sdk/react";
 import { extractUIResourceFromOutput } from "@shared";
 import type { ChatStatus, DynamicToolUIPart, ToolUIPart } from "ai";
@@ -253,6 +254,8 @@ function useStreamingStallDetection(
   return isStreamingStalled;
 }
 
+import { useTheme } from "next-themes";
+
 function MessageTool({
   part,
   toolResultPart,
@@ -270,6 +273,7 @@ function MessageTool({
 }) {
   const output = toolResultPart?.output ?? part.output;
   const uiResource = extractUIResourceFromOutput(output);
+  const { resolvedTheme } = useTheme();
 
   if (uiResource) {
     return (
@@ -286,6 +290,7 @@ function MessageTool({
           onPromptSubmit={onPromptSubmit}
           onIntent={onIntent}
           className="rounded-lg overflow-hidden border"
+          iframeRenderData={{ theme: resolvedTheme }}
         />
       </div>
     );
