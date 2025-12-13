@@ -106,7 +106,7 @@ export function TeamVaultFolderDialog({
     }
   };
 
-  // BYOS feature requires both enterprise license and ARCHESTRA_SECRETS_MANAGER=BYOS_VAULT
+  // Readonly Vault feature requires both enterprise license and ARCHESTRA_SECRETS_MANAGER=READONLY_VAULT
   if (!byosEnabled) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,11 +120,12 @@ export function TeamVaultFolderDialog({
           <div className="py-4">
             <Alert>
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>BYOS Not Enabled</AlertTitle>
+              <AlertTitle>Readonly Vault Not Enabled</AlertTitle>
               <AlertDescription>
-                Team Vault Folders require BYOS (Bring Your Own Secrets) to be
-                enabled. Contact your administrator to configure
-                ARCHESTRA_SECRETS_MANAGER=BYOS_VAULT with an enterprise license.
+                Team Vault Folders require Readonly Vault to be enabled. Contact
+                your administrator to configure
+                ARCHESTRA_SECRETS_MANAGER=READONLY_VAULT with an enterprise
+                license.
               </AlertDescription>
             </Alert>
           </div>
@@ -182,39 +183,59 @@ export function TeamVaultFolderDialog({
                   <p>
                     Archestra is configured to use{" "}
                     <strong>
-                      {vaultKvVersion === "1" ? "KV v1" : "KV v2"}
+                      {vaultKvVersion === "1"
+                        ? "Key-Value Secrets Engine V1"
+                        : "Key-Value Secrets Engine V2"}
                     </strong>
-                    .{" "}
-                    {vaultKvVersion === "1" ? (
-                      <>
-                        For KV v1, use the format{" "}
+                    .
+                  </p>
+                  {vaultKvVersion === "1" ? (
+                    <>
+                      <p>
+                        It provides access to secrets on{" "}
                         <code className="bg-muted px-1 rounded">
                           {"<mount>/<path>"}
-                        </code>{" "}
-                        (e.g.,{" "}
-                        <code className="bg-muted px-1 rounded">
-                          kv/teams/engineering
                         </code>
-                        ).
-                      </>
-                    ) : (
-                      <>
-                        For KV v2, use the format{" "}
+                        .
+                      </p>
+                      <p>
+                        For example, if your secret engine is named{" "}
+                        <code className="bg-muted px-1 rounded">secret_v1</code>{" "}
+                        and path to folder is{" "}
                         <code className="bg-muted px-1 rounded">
-                          {"<mount>/data/<path>"}
-                        </code>{" "}
-                        (e.g.,{" "}
-                        <code className="bg-muted px-1 rounded">
-                          kv/data/teams/engineering
+                          platform/archestra
                         </code>
-                        ).
-                      </>
-                    )}
-                  </p>
-                  <p>
-                    Team admins will be able to browse and select secrets from
-                    this path when installing MCP servers.
-                  </p>
+                        , then path will be{" "}
+                        <code className="bg-muted px-1 rounded">
+                          secret_v1/platform/archestra
+                        </code>
+                        .
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        It provides access to secrets on{" "}
+                        <code className="bg-muted px-1 rounded">
+                          {"<mount>"}/<strong>data</strong>/{"<path>"}
+                        </code>
+                        .
+                      </p>
+                      <p>
+                        For example, if your secret engine is named{" "}
+                        <code className="bg-muted px-1 rounded">secret_v2</code>{" "}
+                        and path to folder is{" "}
+                        <code className="bg-muted px-1 rounded">
+                          platform/archestra
+                        </code>
+                        , then path will be{" "}
+                        <code className="bg-muted px-1 rounded">
+                          secret_v2/<strong>data</strong>/platform/archestra
+                        </code>
+                        .
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 

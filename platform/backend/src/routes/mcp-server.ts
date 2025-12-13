@@ -134,11 +134,11 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
         // Set serverType from catalog item
         serverData.serverType = catalogItem.serverType;
 
-        // Reject personal installations when BYOS is enabled
+        // Reject personal installations when Readonly Vault is enabled
         if (isByosEnabled() && !serverData.teamId) {
           throw new ApiError(
             400,
-            "Personal MCP server installations are not allowed when BYOS is enabled. Please select a team.",
+            "Personal MCP server installations are not allowed when Readonly Vault is enabled. Please select a team.",
           );
         }
 
@@ -181,8 +181,8 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
           if (!isByosEnabled()) {
             throw new ApiError(
               400,
-              "BYOS (Bring Your Own Secrets) is not enabled. " +
-                "Requires ARCHESTRA_SECRETS_MANAGER=BYOS_VAULT and an enterprise license.",
+              "Readonly Vault is not enabled. " +
+                "Requires ARCHESTRA_SECRETS_MANAGER=READONLY_VAULT and an enterprise license.",
             );
           }
 
@@ -195,17 +195,17 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
           createdSecretId = secret.id;
           logger.info(
             { keyCount: Object.keys(userConfigValues).length },
-            "Created BYOS vault secret with per-field references for remote server",
+            "Created Readonly Vault secret with per-field references for remote server",
           );
         }
 
         // If accessToken is provided (PAT flow), create a secret for it
-        // Not allowed when BYOS is enabled - use vault secrets instead
+        // Not allowed when Readonly Vault is enabled - use vault secrets instead
         if (accessToken && !secretId) {
           if (isByosEnabled()) {
             throw new ApiError(
               400,
-              "Manual PAT token input is not allowed when BYOS is enabled. Please use Vault secrets instead.",
+              "Manual PAT token input is not allowed when Readonly Vault is enabled. Please use Vault secrets instead.",
             );
           }
           const secret = await secretManager.createSecret(
@@ -271,8 +271,8 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
           if (!isByosEnabled()) {
             throw new ApiError(
               400,
-              "BYOS (Bring Your Own Secrets) is not enabled. " +
-                "Requires ARCHESTRA_SECRETS_MANAGER=BYOS_VAULT and an enterprise license.",
+              "Readonly Vault is not enabled. " +
+                "Requires ARCHESTRA_SECRETS_MANAGER=READONLY_VAULT and an enterprise license.",
             );
           }
 
@@ -299,13 +299,16 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
             createdSecretId = secret.id;
             logger.info(
               { keyCount: Object.keys(secretEnvVars).length },
-              "Created BYOS vault secret with per-field references for local server",
+              "Created Readonly Vault secret with per-field references for local server",
             );
           }
         }
-        // Collect and store secret-type env vars (not allowed when BYOS is enabled)
+        // Collect and store secret-type env vars
+        // When Readonly Vault is enabled, only static (non-prompted) secrets are allowed to be stored in DB
+        // User-prompted secrets must use Vault references via the isByosVault flow above
         else if (!secretId && catalogItem.localConfig?.environment) {
           const secretEnvVars: Record<string, string> = {};
+          let hasPromptedSecrets = false;
 
           // Collect all secret-type env vars (both static and prompted)
           for (const envDef of catalogItem.localConfig.environment) {
@@ -315,6 +318,9 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
               if (envDef.promptOnInstallation) {
                 // Prompted during installation - get from environmentValues
                 value = environmentValues?.[envDef.key];
+                if (value) {
+                  hasPromptedSecrets = true;
+                }
               } else {
                 // Static value from catalog - get from envDef.value
                 value = envDef.value;
@@ -326,15 +332,17 @@ const mcpServerRoutes: FastifyPluginAsyncZod = async (fastify) => {
             }
           }
 
+          // Block user-prompted secrets when Readonly Vault is enabled (they should use Vault)
+          // Static secrets from catalog are allowed since they're not manual user input
+          if (hasPromptedSecrets && isByosEnabled()) {
+            throw new ApiError(
+              400,
+              "Manual secret input is not allowed when Readonly Vault is enabled. Please use Vault secrets instead.",
+            );
+          }
+
           // Create secret in database if there are any secret env vars
           if (Object.keys(secretEnvVars).length > 0) {
-            // Not allowed when BYOS is enabled - use vault secrets instead
-            if (isByosEnabled()) {
-              throw new ApiError(
-                400,
-                "Manual secret input is not allowed when BYOS is enabled. Please use Vault secrets instead.",
-              );
-            }
             const secret = await secretManager.createSecret(
               secretEnvVars,
               `mcp-server-${serverData.name}-env`,
