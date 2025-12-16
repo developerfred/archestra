@@ -32,6 +32,7 @@ export const RouteId = {
   GetInternalMcpCatalogItem: "getInternalMcpCatalogItem",
   UpdateInternalMcpCatalogItem: "updateInternalMcpCatalogItem",
   DeleteInternalMcpCatalogItem: "deleteInternalMcpCatalogItem",
+  DeleteInternalMcpCatalogItemByName: "deleteInternalMcpCatalogItemByName",
 
   // MCP Server Routes
   GetMcpServers: "getMcpServers",
@@ -222,6 +223,7 @@ export const RouteId = {
   GetSecretsType: "getSecretsType",
   GetSecret: "getSecret",
   CheckSecretsConnectivity: "checkSecretsConnectivity",
+  InitializeSecretsManager: "initializeSecretsManager",
 } as const;
 
 export type RouteId = (typeof RouteId)[keyof typeof RouteId];

@@ -17,7 +17,7 @@ export const E2eTestId = {
   ManageCredentialsDialog: "manage-credentials-dialog",
   ManageCredentialsDialogTable: "manage-credentials-dialog-table",
   CredentialRow: "credential-row",
-  CredentialOwnerEmail: "credential-owner-email",
+  CredentialOwner: "credential-owner",
   CredentialTeamSelect: "credential-team-select",
   ManageCredentialsButton: "manage-credentials-button",
   ManageToolsButton: "manage-tools-button",
@@ -31,9 +31,31 @@ export const E2eTestId = {
   TokenSelect: "token-select",
   ProfileTokenManagerTeamsSelect: "profile-token-manager-teams-select",
   ConnectAgentButton: "connect-agent-button",
+  ConnectCatalogItemButton: "connect-catalog-item-button",
+  SelectCredentialTypePersonal: "select-credential-type-personal",
+  SelectCredentialTypeTeam: "select-credential-type-team",
+  CredentialsCount: "credentials-count",
+  StaticCredentialToUse: "static-credential-to-use",
+  SelectCredentialTypeTeamDropdown: "select-credential-type-team-dropdown",
   ProfileTeamBadge: "profile-team-badge",
   EditAgentButton: "edit-agent-button",
   RemoveTeamBadge: "remove-team-badge",
+  PromptOnInstallationCheckbox: "prompt-on-installation-checkbox",
+  RevokeCredentialButton: "revoke-credential-button",
+  ExternalSecretSelector: "external-secret-selector",
+  SelectEnvironmentVariableType: "select-environment-variable-type",
+  AddCatalogItemButton: "add-catalog-item-button",
+  ConfigureVaultFolderButton: "configure-vault-folder-button",
+  ExternalSecretSelectorTeamTrigger: "external-secret-selector-team-trigger",
+  ExternalSecretSelectorSecretTrigger:
+    "external-secret-selector-secret-trigger",
+  ExternalSecretSelectorSecretTriggerKey:
+    "external-secret-selector-secret-trigger-key",
+  InlineVaultSecretSelectorSecretTrigger:
+    "inline-vault-secret-selector-secret-trigger",
+  InlineVaultSecretSelectorSecretTriggerKey:
+    "inline-vault-secret-selector-secret-trigger-key",
+  ManageMembersButton: "manage-members-button",
   // Chat Settings
   ChatApiKeysTable: "chat-api-keys-table",
   AddChatApiKeyButton: "add-chat-api-key-button",
@@ -99,3 +121,5 @@ export type SsoProviderId =
 
 /** List of all predefined SSO provider IDs for account linking */
 export const SSO_TRUSTED_PROVIDER_IDS = Object.values(SSO_PROVIDER_ID);
+
+export const DEFAULT_VAULT_TOKEN = "dev-root-token";
