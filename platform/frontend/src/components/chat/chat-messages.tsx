@@ -23,15 +23,21 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
+
 import { McpUIResourceRenderer } from "@/components/chat/mcp-ui-resource-renderer";
+import { InlineChatError } from "./inline-chat-error";
+
 
 interface ChatMessagesProps {
   messages: UIMessage[];
   hideToolCalls?: boolean;
   status: ChatStatus;
+
   onUIToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onUIPromptSubmit?: (prompt: string) => void;
   onUIIntent?: (intent: string, params: Record<string, unknown>) => void;
+  isLoadingConversation?: boolean;
+  error?: Error | null;
 }
 
 // Type guards for tool parts
@@ -61,6 +67,8 @@ export function ChatMessages({
   onUIToolCall,
   onUIPromptSubmit,
   onUIIntent,
+  isLoadingConversation = false,
+  error = null,
 }: ChatMessagesProps) {
   const isStreamingStalled = useStreamingStallDetection(messages, status);
 
@@ -196,6 +204,8 @@ export function ChatMessages({
               })}
             </div>
           ))}
+          {/* Inline error display */}
+          {error && <InlineChatError error={error} />}
           {(status === "submitted" ||
             (status === "streaming" && isStreamingStalled)) && (
             <Message from="assistant">
