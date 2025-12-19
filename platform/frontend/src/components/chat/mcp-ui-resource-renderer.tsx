@@ -36,19 +36,21 @@ export function McpUIResourceRenderer({
 }: McpUIResourceRendererProps) {
   const [isLoaded, setIsLoaded] = useState(!!LazyUIResourceRenderer);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (LazyUIResourceRenderer || loadError) return;
+    if (LazyUIResourceRenderer || (loadError && retryCount === 0)) return;
 
     import("@mcp-ui/client")
       .then((mod) => {
         LazyUIResourceRenderer = mod.UIResourceRenderer;
         setIsLoaded(true);
+        setLoadError(null);
       })
       .catch((err) => {
         setLoadError(err.message);
       });
-  }, [loadError]);
+  }, [retryCount, loadError]);
 
   const handleUIAction = useCallback(
     async (action: UIActionResult): Promise<{ status: string }> => {
@@ -80,12 +82,25 @@ export function McpUIResourceRenderer({
     [onToolCall, onPromptSubmit, onIntent],
   );
 
+  const handleRetry = () => {
+    setRetryCount((prev) => prev + 1);
+  };
+
   if (loadError) {
     return (
       <div className="p-4 border border-destructive/50 rounded-md bg-destructive/10">
         <p className="text-sm text-destructive">
           Failed to load UI component: {loadError}
         </p>
+        {retryCount < 3 && (
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="mt-2 px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:opacity-90 transition-opacity"
+          >
+            Retry ({3 - retryCount} attempts left)
+          </button>
+        )}
       </div>
     );
   }
