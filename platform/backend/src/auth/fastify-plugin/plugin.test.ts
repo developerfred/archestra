@@ -19,10 +19,24 @@ vi.mock("@/auth", () => ({
   hasPermission: vi.fn(),
 }));
 
+vi.mock("@/auth/utils", () => ({
+  hasPermission: vi.fn(),
+}));
+
 vi.mock("@/models", () => ({
   UserModel: {
     getById: vi.fn(),
   },
+}));
+
+vi.mock("@shared/access-control", () => ({
+  requiredEndpointPermissionsMap: {
+    createAgent: { profile: ["create"] },
+    getAgents: { profile: ["read"] },
+  },
+  allAvailableActions: {},
+  editorPermissions: {},
+  memberPermissions: {},
 }));
 
 import { betterAuth, hasPermission } from "@/auth";

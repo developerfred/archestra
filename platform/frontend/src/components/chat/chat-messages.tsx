@@ -21,11 +21,14 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
+import { InlineChatError } from "./inline-chat-error";
 
 interface ChatMessagesProps {
   messages: UIMessage[];
   hideToolCalls?: boolean;
   status: ChatStatus;
+  isLoadingConversation?: boolean;
+  error?: Error | null;
 }
 
 // Type guards for tool parts
@@ -52,10 +55,17 @@ export function ChatMessages({
   messages,
   hideToolCalls = false,
   status,
+  isLoadingConversation = false,
+  error = null,
 }: ChatMessagesProps) {
   const isStreamingStalled = useStreamingStallDetection(messages, status);
 
   if (messages.length === 0) {
+    // Don't show "start conversation" message while loading - prevents flash of empty state
+    if (isLoadingConversation) {
+      return null;
+    }
+
     return (
       <div className="flex-1 flex h-full items-center justify-center text-center text-muted-foreground">
         <p className="text-sm">Start a conversation by sending a message</p>
@@ -184,6 +194,8 @@ export function ChatMessages({
               })}
             </div>
           ))}
+          {/* Inline error display */}
+          {error && <InlineChatError error={error} />}
           {(status === "submitted" ||
             (status === "streaming" && isStreamingStalled)) && (
             <Message from="assistant">
