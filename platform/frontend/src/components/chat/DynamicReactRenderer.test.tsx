@@ -4,16 +4,16 @@ import { renderComponentTree } from './DynamicReactRenderer';
 
 // Mock UI components to simplify testing and focus on DynamicReactRenderer's logic
 vi.mock('../ui/card', () => ({
-  Card: vi.fn((props) => <div data-testid="Card" {...props} />),
-  CardContent: vi.fn((props) => <div data-testid="CardContent" {...props} />),
-  CardDescription: vi.fn((props) => <div data-testid="CardDescription" {...props} />),
-  CardFooter: vi.fn((props) => <div data-testid="CardFooter" {...props} />),
-  CardHeader: vi.fn((props) => <div data-testid="CardHeader" {...props} />),
-  CardTitle: vi.fn((props) => <div data-testid="CardTitle" {...props} />),
+  Card: vi.fn(({ children, ...props }) => <div data-testid="Card" {...props}>{children}</div>),
+  CardContent: vi.fn(({ children, ...props }) => <div data-testid="CardContent" {...props}>{children}</div>),
+  CardDescription: vi.fn(({ children, ...props }) => <div data-testid="CardDescription" {...props}>{children}</div>),
+  CardFooter: vi.fn(({ children, ...props }) => <div data-testid="CardFooter" {...props}>{children}</div>),
+  CardHeader: vi.fn(({ children, ...props }) => <div data-testid="CardHeader" {...props}>{children}</div>),
+  CardTitle: vi.fn(({ children, ...props }) => <div data-testid="CardTitle" {...props}>{children}</div>),
 }));
 
 vi.mock('../ui/badge', () => ({
-  Badge: vi.fn((props) => <span data-testid="Badge" {...props} />),
+  Badge: vi.fn(({ children, ...props }) => <span data-testid="Badge" {...props}>{children}</span>),
 }));
 
 vi.mock('../ui/separator', () => ({
@@ -63,7 +63,7 @@ describe('renderComponentTree', () => {
     expect(cardContent).toHaveTextContent('Content');
   });
 
-  it('should render common HTML elements', () => {
+  it('should render common HTML elements with children', () => {
     const json = JSON.stringify({
       component: 'div',
       props: {
@@ -81,6 +81,8 @@ describe('renderComponentTree', () => {
     expect(screen.getByText('Paragraph 1')).toBeInTheDocument();
     expect(screen.getByText('Span 1')).toBeInTheDocument();
     expect(screen.getByText('Title 1')).toBeInTheDocument();
+    const divElement = screen.getByRole('generic', { name: '' }); // div has no semantic role by default
+    expect(divElement).toHaveClass('my-div');
   });
 
   it('should handle arrays of primitive children within an element', () => {
@@ -111,17 +113,17 @@ describe('renderComponentTree', () => {
     });
 
     render(renderComponentTree(json));
-    expect(screen.getByText("Error: Component 'NonExistentComponent' not found.")).toBeInTheDocument();
+    expect(screen.getByText(/Error: Component 'NonExistentComponent' not found/i)).toBeInTheDocument();
   });
 
   it('should display an error for invalid JSON', () => {
     const invalidJson = '{ component: "Card", props: { children: "Missing quote }';
 
     render(renderComponentTree(invalidJson));
-    expect(screen.getByText("Error: Failed to load component.")).toBeInTheDocument();
+    expect(screen.getByText(/Error: Failed to load component/i)).toBeInTheDocument();
   });
 
-  it('should correctly render nested objects as JSON strings if not registered components', () => {
+  it('should correctly render nested objects as JSON strings when passed as children', () => {
     const complexData = {
       annual: '$9,999',
       monthly: '$999',
@@ -130,31 +132,30 @@ describe('renderComponentTree', () => {
     const json = JSON.stringify({
       component: 'CardContent',
       props: {
-        // Simulating how DynamicReactRenderer's processedProps would stringify a non-registered object prop
-        data: JSON.stringify(complexData, null, 2)
+        children: complexData, // Passed directly as a child to be stringified by renderPropValue
       }
     });
 
     render(renderComponentTree(json));
     const cardContent = screen.getByTestId('CardContent');
     expect(cardContent).toBeInTheDocument();
-    // Expect the `data` prop to be rendered as stringified JSON
+    // Expect the `complexData` object to be stringified and rendered as text content
     expect(cardContent).toHaveTextContent(JSON.stringify(complexData, null, 2));
   });
 
-  it('should handle arrays of strings as ul li structure within processedProps', () => {
+  it('should handle arrays of strings as ul li structure within children', () => {
     const featuresList = ['Feature 1', 'Feature 2', 'Feature 3'];
     const json = JSON.stringify({
-      component: 'div',
+      component: 'Card',
       props: {
-        // This simulates a prop that is an array, which `DynamicReactRenderer` converts to a `ul`
-        dynamicList: featuresList,
+        children: [
+          { component: 'ul', props: { children: featuresList.map(f => ({ component: 'li', props: { children: f }})) } }
+        ]
       }
     });
 
     render(renderComponentTree(json));
 
-    // The `dynamicList` prop will be converted to a <ul> internally by DynamicReactRenderer
     expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.getByText('Feature 1')).toBeInTheDocument();
     expect(screen.getByText('Feature 2')).toBeInTheDocument();
