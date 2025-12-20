@@ -186,19 +186,19 @@ export function extractUIResourceFromOutput(
 function convertObjectToHtml(obj: Record<string, unknown>): string | null {
   if (Object.keys(obj).length === 0) return null;
 
-  let html = '<div class="mcp-ui-container">';
+  let html = '<div class="p-4 font-sans">';
 
   if (obj.title || obj.name) {
-    html += `<h2 class="mcp-ui-title">${obj.title || obj.name}</h2>`;
+    html += `<h2 class="text-foreground mb-4">${obj.title || obj.name}</h2>`;
   }
 
   html +=
-    '<table class="mcp-ui-table">';
-  html += '<thead><tr class="mcp-ui-table-header">';
+    '<table class="w-full border-collapse mt-2">';
+  html += '<thead><tr class="bg-card">';
   html +=
-    '<th class="mcp-ui-table-header-cell">Property</th>';
+    '<th class="text-left p-2 border border-border">Property</th>';
   html +=
-    '<th class="mcp-ui-table-header-cell">Value</th>';
+    '<th class="text-left p-2 border border-border">Value</th>';
   html += "</tr></thead><tbody>";
 
   for (const [key, value] of Object.entries(obj)) {
@@ -206,16 +206,16 @@ function convertObjectToHtml(obj: Record<string, unknown>): string | null {
 
     let displayValue = "";
     if (value === null || value === undefined) {
-      displayValue = '<span class="mcp-ui-null-value">null</span>';
+      displayValue = '<span class="text-muted-foreground">null</span>';
     } else if (typeof value === "object") {
-      displayValue = `<pre class="mcp-ui-preformatted">${JSON.stringify(value, null, 2)}</pre>`;
+      displayValue = `<pre class="m-0 whitespace-pre-wrap text-xs">${JSON.stringify(value, null, 2)}</pre>`;
     } else {
       displayValue = String(value);
     }
 
-    html += `<tr class="mcp-ui-table-body-row">`;
-    html += `<td class="mcp-ui-table-body-cell mcp-ui-table-body-cell-key">${key}</td>`;
-    html += `<td class="mcp-ui-table-body-cell">${displayValue}</td>`;
+    html += `<tr class="border-b border-border">`;
+    html += `<td class="p-2 border border-border font-bold">${key}</td>`;
+    html += `<td class="p-2 border border-border">${displayValue}</td>`;
     html += `</tr>`;
   }
 
