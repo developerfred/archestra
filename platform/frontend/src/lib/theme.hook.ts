@@ -1,7 +1,8 @@
 import {
   DEFAULT_THEME_ID,
-  type OrganizationCustomFont,
-  type OrganizationTheme,
+  OrganizationCustomFont,
+  OrganizationTheme,
+  archestraApiTypes,
 } from "@shared";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
