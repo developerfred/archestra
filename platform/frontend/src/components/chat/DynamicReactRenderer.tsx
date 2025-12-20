@@ -16,8 +16,17 @@ const componentRegistry: Record<string, React.ElementType> = {
   CardTitle,
   Badge,
   Separator,
-  // Adicione outros componentes da UI aqui
+  // Common HTML elements
+  div: "div",
+  p: "p",
+  span: "span",
+  ul: "ul",
+  li: "li",
+  h2: "h2",
+  h3: "h3",
+  strong: "strong",
 };
+
 
 interface DynamicReactRendererProps {
   componentName: string;
