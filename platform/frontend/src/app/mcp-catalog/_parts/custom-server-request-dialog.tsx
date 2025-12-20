@@ -124,7 +124,7 @@ export function CustomServerRequestDialog({
               environment:
                 values.environment.length > 0
                   ? values.environment.map((env) => ({
-                      key: env.name,
+                      key: env.key,
                       value: env.value,
                       type: "plain_text",
                       promptOnInstallation: false,
