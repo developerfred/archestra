@@ -1,11 +1,16 @@
 "use client";
 
-import type { UIMessage } from "@ai-sdk/react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Eye, EyeOff, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+
+import type { UIMessage } from "@ai-sdk/react";
 import { CreateCatalogDialog } from "@/app/mcp-catalog/_parts/create-catalog-dialog";
 import { CustomServerRequestDialog } from "@/app/mcp-catalog/_parts/custom-server-request-dialog";
 import type { PromptInputProps } from "@/components/ai-elements/prompt-input";
@@ -33,8 +38,12 @@ import {
 import { useChatSession } from "@/contexts/global-chat-context";
 import { useProfiles } from "@/lib/agent.query";
 import { useHasPermissions } from "@/lib/auth.query";
-import { useConversation, useCreateConversation } from "@/lib/chat.query";
-import { useChatApiKeysOptional } from "@/lib/chat-settings.query";
+import {
+  useConversation,
+  useCreateConversation,
+  useUpdateConversation,
+} from "@/lib/chat.query";
+import { useChatApiKeys } from "@/lib/chat-settings.query";
 import { useDialogs } from "@/lib/dialog.hook";
 import { useFeatures } from "@/lib/features.query";
 import { useDeletePrompt, usePrompt, usePrompts } from "@/lib/prompts.query";
@@ -52,6 +61,16 @@ export default function ChatPage() {
     // Initialize from localStorage
     if (typeof window !== "undefined") {
       return localStorage.getItem("archestra-chat-hide-tool-calls") === "true";
+    }
+    return false;
+  });
+
+  const [hideUIResources, setHideUIResources] = useState(() => {
+    // Initialize from localStorage
+    if (typeof window !== "undefined") {
+      return (
+        localStorage.getItem("archestra-chat-hide-ui-resources") === "true"
+      );
     }
     return false;
   });
@@ -86,12 +105,12 @@ export default function ChatPage() {
   const chatSession = useChatSession(conversationId);
 
   // Check if API key is configured for any provider
-  const { data: chatApiKeys = [] } = useChatApiKeysOptional();
+  const { data: chatApiKeys = [] } = useChatApiKeys();
   const { data: features } = useFeatures();
   // Vertex AI Gemini mode doesn't require an API key (uses ADC)
   const hasAnyApiKey =
-    chatApiKeys.some((k) => k.secretId) || features?.geminiVertexAiEnabled;
-
+    chatApiKeys.some((k) => k.secretId !== null) ||
+    features?.geminiVertexAiEnabled;
   // Sync conversation ID with URL
   useEffect(() => {
     const conversationParam = searchParams.get(CONVERSATION_QUERY_PARAM);
@@ -114,7 +133,8 @@ export default function ChatPage() {
   );
 
   // Fetch conversation with messages
-  const { data: conversation } = useConversation(conversationId);
+  const { data: conversation, isLoading: isLoadingConversation } =
+    useConversation(conversationId);
 
   // Find the specific prompt for this conversation (if any)
   const conversationPrompt = conversation?.promptId
@@ -157,6 +177,22 @@ export default function ChatPage() {
 
   // Create conversation mutation (requires agentId)
   const createConversationMutation = useCreateConversation();
+  const updateConversationMutation = useUpdateConversation();
+
+  const handleModelChange = useCallback(
+    async (model: string) => {
+      if (!conversationId) return;
+      try {
+        await updateConversationMutation.mutateAsync({
+          id: conversationId,
+          selectedModel: model,
+        });
+      } catch (error) {
+        console.error("Failed to update conversation model:", error);
+      }
+    },
+    [conversationId, updateConversationMutation],
+  );
 
   // Handle prompt selection from library
   const handleSelectPrompt = useCallback(
@@ -221,6 +257,12 @@ export default function ChatPage() {
     setHideToolCalls(newValue);
     localStorage.setItem("archestra-chat-hide-tool-calls", String(newValue));
   }, [hideToolCalls]);
+
+  const toggleHideUIResources = useCallback(() => {
+    const newValue = !hideUIResources;
+    setHideUIResources(newValue);
+    localStorage.setItem("archestra-chat-hide-ui-resources", String(newValue));
+  }, [hideUIResources]);
 
   // Extract chat session properties (or use defaults if session not ready)
   const messages = chatSession?.messages ?? [];
@@ -612,6 +654,24 @@ export default function ChatPage() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={toggleHideUIResources}
+                className="text-xs"
+              >
+                {hideUIResources ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    Show UI
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    Hide UI
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={toggleHideToolCalls}
                 className="text-xs"
               >
@@ -635,6 +695,7 @@ export default function ChatPage() {
               conversationId={conversationId}
               messages={messages}
               hideToolCalls={hideToolCalls}
+              hideUIResources={hideUIResources}
               status={status}
               onUIPromptSubmit={onUIPromptSubmit}
               onUIToolCall={onUIToolCall}

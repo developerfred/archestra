@@ -50,7 +50,7 @@ export function ToolOutputWithUI({
           onToolCall={onToolCall}
           onPromptSubmit={onPromptSubmit}
           onIntent={onIntent}
-          className="mt-2 rounded-lg overflow-hidden"
+          className="mt-2"
           iframeRenderData={{ theme: resolvedTheme }}
         />
       </div>

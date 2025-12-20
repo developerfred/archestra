@@ -24,17 +24,17 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 
-import { McpUIResourceRenderer } from "@/components/chat/mcp-ui-resource-renderer";
+import { UIResourceDisplay } from "./ui-resource-display";
 import { useUpdateChatMessage } from "@/lib/chat-message.query";
 import { EditableAssistantMessage } from "./editable-assistant-message";
 import { EditableUserMessage } from "./editable-user-message";
 import { InlineChatError } from "./inline-chat-error";
 
-
 interface ChatMessagesProps {
   conversationId: string | undefined;
   messages: UIMessage[];
   hideToolCalls?: boolean;
+  hideUIResources?: boolean;
   status: ChatStatus;
 
   onUIToolCall?: (toolName: string, params: Record<string, unknown>) => void;
@@ -74,6 +74,7 @@ export function ChatMessages({
   conversationId,
   messages,
   hideToolCalls = false,
+  hideUIResources = false,
   status,
   onUIToolCall,
   onUIPromptSubmit,
@@ -341,6 +342,7 @@ export function ChatMessages({
                           onToolCall={onUIToolCall}
                           onPromptSubmit={onUIPromptSubmit}
                           onIntent={onUIIntent}
+                          hideUIResources={hideUIResources}
                         />
                       );
                     }
@@ -373,6 +375,7 @@ export function ChatMessages({
                             onToolCall={onUIToolCall}
                             onPromptSubmit={onUIPromptSubmit}
                             onIntent={onUIIntent}
+                            hideUIResources={hideUIResources}
                           />
                         );
                       }
@@ -452,6 +455,7 @@ function MessageTool({
   onToolCall,
   onPromptSubmit,
   onIntent,
+  hideUIResources,
 }: {
   part: ToolUIPart | DynamicToolUIPart;
   toolResultPart: ToolUIPart | DynamicToolUIPart | null;
@@ -459,27 +463,20 @@ function MessageTool({
   onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onPromptSubmit?: (prompt: string) => void;
   onIntent?: (intent: string, params: Record<string, unknown>) => void;
+  hideUIResources?: boolean;
 }) {
   const output = toolResultPart?.output ?? part.output;
   const uiResource = extractUIResourceFromOutput(output);
-  const { resolvedTheme } = useTheme();
 
-  if (uiResource) {
+  if (uiResource && !hideUIResources) {
     return (
       <div className="my-4">
-        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-          <span className="font-medium">{toolName}</span>
-          <span className="text-green-600 dark:text-green-400">
-            ✓ Interactive UI
-          </span>
-        </div>
-        <McpUIResourceRenderer
+        <UIResourceDisplay
           resource={uiResource.resource}
+          toolName={toolName}
           onToolCall={onToolCall}
           onPromptSubmit={onPromptSubmit}
           onIntent={onIntent}
-          className="rounded-lg overflow-hidden border"
-          iframeRenderData={{ theme: resolvedTheme }}
         />
       </div>
     );

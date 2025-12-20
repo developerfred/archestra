@@ -30,7 +30,12 @@ export function transformFormToApiData(
     data.localConfig = {
       command: values.localConfig.command || undefined,
       arguments: argumentsArray.length > 0 ? argumentsArray : undefined,
-      environment: values.localConfig.environment,
+      environment: values.localConfig.environment?.map((env) => ({
+        key: env.name,
+        value: env.value,
+        type: "plain_text",
+        promptOnInstallation: false,
+      })),
       dockerImage: values.localConfig.dockerImage || undefined,
       transportType: values.localConfig.transportType || undefined,
       httpPort: values.localConfig.httpPort

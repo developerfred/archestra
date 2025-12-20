@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { CodeBlock } from "./code-block";
-import { McpUIResourceRenderer } from "@/components/chat/mcp-ui-resource-renderer";
+import { UIResourceDisplay } from "@/components/chat/ui-resource-display";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
@@ -182,6 +182,7 @@ export type ToolOutputProps = ComponentProps<"div"> & {
   onToolCall?: (toolName: string, params: Record<string, unknown>) => void;
   onPromptSubmit?: (prompt: string) => void;
   onIntent?: (intent: string, params: Record<string, unknown>) => void;
+  hideUIResources?: boolean;
 };
 
 export const ToolOutput = ({
@@ -193,6 +194,7 @@ export const ToolOutput = ({
   onToolCall,
   onPromptSubmit,
   onIntent,
+  hideUIResources,
   ...props
 }: ToolOutputProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -203,7 +205,7 @@ export const ToolOutput = ({
     return null;
   }
 
-  if (uiResource) {
+  if (uiResource && !hideUIResources) {
     return (
       <div className={cn("space-y-2 p-4", className)} {...props}>
         <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide flex items-center gap-2">
@@ -212,13 +214,11 @@ export const ToolOutput = ({
             ✓ Interactive UI
           </span>
         </h4>
-        <McpUIResourceRenderer
+        <UIResourceDisplay
           resource={uiResource.resource}
           onToolCall={onToolCall}
           onPromptSubmit={onPromptSubmit}
           onIntent={onIntent}
-          className="rounded-md overflow-hidden"
-          iframeRenderData={{ theme: resolvedTheme }}
         />
       </div>
     );

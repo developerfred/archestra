@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/mcp-ui.css";
 import type { UIActionResult, UIResourceContent } from "@shared";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface McpUIResourceRendererProps {
   onIntent?: (intent: string, params: Record<string, unknown>) => void;
   className?: string;
   iframeRenderData?: Record<string, unknown>;
+  maxRetries?: number;
 }
 
 export function McpUIResourceRenderer({
@@ -33,6 +35,7 @@ export function McpUIResourceRenderer({
   onIntent,
   className,
   iframeRenderData,
+  maxRetries = 3,
 }: McpUIResourceRendererProps) {
   const [isLoaded, setIsLoaded] = useState(!!LazyUIResourceRenderer);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -92,13 +95,13 @@ export function McpUIResourceRenderer({
         <p className="text-sm text-destructive">
           Failed to load UI component: {loadError}
         </p>
-        {retryCount < 3 && (
+        {retryCount < maxRetries && (
           <button
             type="button"
             onClick={handleRetry}
             className="mt-2 px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:opacity-90 transition-opacity"
           >
-            Retry ({3 - retryCount} attempts left)
+            Retry ({maxRetries - retryCount} attempts left)
           </button>
         )}
       </div>
@@ -117,7 +120,9 @@ export function McpUIResourceRenderer({
   }
 
   return (
-    <div className={className}>
+    <div
+      className={`${className || ""} bg-background rounded-lg border border-border`}
+    >
       <LazyUIResourceRenderer
         resource={resource}
         onUIAction={handleUIAction}
@@ -127,6 +132,9 @@ export function McpUIResourceRenderer({
             minHeight: "200px",
             border: "none",
             borderRadius: "8px",
+            boxShadow: "0 0 0 1px hsl(var(--border)) inset",
+            backgroundColor: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
           },
           autoResizeIframe: { height: true },
           iframeRenderData,
