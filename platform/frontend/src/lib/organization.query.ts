@@ -38,13 +38,15 @@ export function useInvitation(invitationId: string) {
     queryKey: organizationKeys.invitation(invitationId),
     queryFn: async () => {
       if (!session) {
-        return undefined;
+        return null;
       }
       const response = await authClient.organization.getInvitation({
         query: { id: invitationId },
       });
-      return response.data;
+      return response.data ?? null;
     },
+    // Provide initial data to prevent undefined state
+    initialData: null,
   });
 }
 
@@ -228,12 +230,14 @@ export function useOrganization(enabled = true) {
     queryKey: organizationKeys.details(),
     queryFn: async () => {
       const { data } = await archestraApiSdk.getOrganization();
-      return data;
+      return data ?? null; // Return null instead of undefined
     },
     // Only fetch when user is authenticated to prevent 403 errors during initial auth check
     enabled: enabled && !!session.data?.user,
     retry: false, // Don't retry on auth pages to avoid repeated 401 errors
     throwOnError: false, // Don't throw errors to prevent crashes
+    // Provide initial data to prevent undefined state
+    initialData: null,
   });
 }
 

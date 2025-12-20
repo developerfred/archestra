@@ -13,11 +13,13 @@ function useAllPermissions() {
     queryKey: ["auth", "userPermissions"],
     queryFn: async () => {
       const { data } = await archestraApiSdk.getUserPermissions();
-      return data;
+      return data ?? {}; // Return empty object instead of undefined
     },
     retry: false,
     throwOnError: false,
     enabled: isAuthenticated,
+    // Provide initial data to prevent undefined state
+    initialData: {},
   });
 }
 

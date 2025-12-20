@@ -13,8 +13,10 @@ export function useSession() {
     queryKey: ["auth", "session"],
     queryFn: async () => {
       const { data } = await authClient.getSession();
-      return data;
+      return data ?? null;
     },
+    // Provide initial data to prevent undefined state
+    initialData: null,
   });
 }
 
