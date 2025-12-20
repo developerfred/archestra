@@ -1,0 +1,48 @@
+.mcp-ui-container {
+  font-family: sans-serif;
+  padding: 16px;
+}
+
+.mcp-ui-title {
+  color: oklch(var(--foreground));
+  margin-bottom: 16px;
+}
+
+.mcp-ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.mcp-ui-table-header {
+  background-color: oklch(var(--card));
+}
+
+.mcp-ui-table-header-cell {
+  text-align: left;
+  padding: 8px;
+  border: 1px solid oklch(var(--border));
+}
+
+.mcp-ui-table-body-row {
+  border-bottom: 1px solid oklch(var(--border));
+}
+
+.mcp-ui-table-body-cell {
+  padding: 8px;
+  border: 1px solid oklch(var(--border));
+}
+
+.mcp-ui-table-body-cell-key {
+  font-weight: bold;
+}
+
+.mcp-ui-null-value {
+  color: oklch(var(--muted-foreground));
+}
+
+.mcp-ui-preformatted {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
