@@ -27,7 +27,7 @@
   "license": "ISC",
   "dependencies": {
     "better-auth": "1.4.6-beta.3",
-    "zod": "^4.1.13"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.88.0",
