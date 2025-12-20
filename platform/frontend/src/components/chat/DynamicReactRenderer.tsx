@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '../../ui/badge';
 import { Separator } from '../../ui/separator';
 
-// Um registro de componentes que podem ser renderizados dinamicamente
-// Adicione mais componentes aqui conforme necessário, importando-os
+// A registry of components that can be dynamically rendered
+// Add more components here as needed, by importing them.
 const componentRegistry: Record<string, React.ElementType> = {
   Card,
   CardContent,
@@ -29,10 +29,10 @@ export function DynamicReactRenderer({ componentName, props }: DynamicReactRende
 
   if (!Component) {
     console.error(`Component '${componentName}' not found in registry.`);
-    return <div className="text-destructive">Erro: Componente '{componentName}' não encontrado.</div>;
+    return <div className="text-destructive">Error: Component '{componentName}' not found.</div>;
   }
 
-  // Renderiza objetos aninhados como strings JSON formatadas se não forem componentes registrados.
+  // Renders nested objects as formatted JSON strings if they are not registered components.
   const processedProps: Record<string, unknown> = {};
   for (const key in props) {
     if (Object.prototype.hasOwnProperty.call(props, key)) {
@@ -57,7 +57,7 @@ export function DynamicReactRenderer({ componentName, props }: DynamicReactRende
   return React.createElement(Component, processedProps);
 }
 
-// Helper para desserializar e renderizar o JSON que representa a árvore de componentes
+// Helper to deserialize and render the JSON representing the component tree
 export function renderComponentTree(jsonTree: string): React.ReactNode {
   try {
     const data = JSON.parse(jsonTree);
@@ -67,7 +67,7 @@ export function renderComponentTree(jsonTree: string): React.ReactNode {
         { componentName: data.component, props: data.props }
       );
     } else if (Array.isArray(data)) {
-        // Se for um array, tentar renderizar cada item
+        // If it's an array, try to render each item.
         return (
             <>
                 {data.map((item, index) => {
@@ -84,9 +84,9 @@ export function renderComponentTree(jsonTree: string): React.ReactNode {
             </>
         );
     }
-    return <div className="text-destructive">Erro: Formato de componente inválido.</div>;
+    return <div className="text-destructive">Error: Invalid component format.</div>;
   } catch (error) {
     console.error("Failed to parse component JSON:", error);
-    return <div className="text-destructive">Erro: Não foi possível carregar o componente.</div>;
+    return <div className="text-destructive">Error: Failed to load component.</div>;
   }
 }
