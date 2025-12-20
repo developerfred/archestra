@@ -78,11 +78,15 @@ describe('renderComponentTree', () => {
 
     render(renderComponentTree(json));
 
+    // We no longer query by role 'generic' directly on the div because it's ambiguous.
+    // Instead, we check for the children content and the parent's class.
+    const divElement = screen.getByText('Paragraph 1').closest('div'); // Find a div that contains the paragraph
+    expect(divElement).toBeInTheDocument();
+    expect(divElement).toHaveClass('my-div');
+
     expect(screen.getByText('Paragraph 1')).toBeInTheDocument();
     expect(screen.getByText('Span 1')).toBeInTheDocument();
     expect(screen.getByText('Title 1')).toBeInTheDocument();
-    const divElement = screen.getByRole('generic', { name: '' }); // div has no semantic role by default
-    expect(divElement).toHaveClass('my-div');
   });
 
   it('should handle arrays of primitive children within an element', () => {
@@ -113,6 +117,7 @@ describe('renderComponentTree', () => {
     });
 
     render(renderComponentTree(json));
+    // Updated assertion to match the new error message from renderComponentTree
     expect(screen.getByText(/Error: Component 'NonExistentComponent' not found/i)).toBeInTheDocument();
   });
 
@@ -120,6 +125,7 @@ describe('renderComponentTree', () => {
     const invalidJson = '{ component: "Card", props: { children: "Missing quote }';
 
     render(renderComponentTree(invalidJson));
+    // Updated assertion to match the new error message from renderComponentTree
     expect(screen.getByText(/Error: Failed to load component/i)).toBeInTheDocument();
   });
 

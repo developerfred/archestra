@@ -41,25 +41,36 @@ export function DynamicReactRenderer({ componentName, props }: DynamicReactRende
     return <div className="text-destructive">Error: Component '{componentName}' not found.</div>;
   }
 
-  // Renders nested objects as formatted JSON strings if they are not registered components.
+  const renderPropValue = (value: unknown, key?: React.Key): React.ReactNode => {
+    if (value === null || value === undefined || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item, index) => renderPropValue(item, key !== undefined ? `${key}-${index}` : index));
+    }
+
+    // If it's an object that looks like a component descriptor
+    if (typeof value === 'object' && 'component' in value && typeof (value as { component: string }).component === 'string') {
+      return React.createElement(DynamicReactRenderer, {
+        componentName: (value as { component: string }).component,
+        props: (value as { props: Record<string, unknown> }).props || {},
+        key,
+      });
+    }
+
+    // If it's a generic object, stringify it
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+
+    return null;
+  };
+
   const processedProps: Record<string, unknown> = {};
   for (const key in props) {
     if (Object.prototype.hasOwnProperty.call(props, key)) {
-      const value = props[key];
-      if (typeof value === 'object' && value !== null && !Array.isArray(value) && !componentRegistry[key]) {
-        processedProps[key] = JSON.stringify(value, null, 2);
-      } else if (Array.isArray(value)) {
-        processedProps[key] = (
-          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-            {(value as Array<string>).map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        );
-      }
-      else {
-        processedProps[key] = value;
-      }
+      processedProps[key] = renderPropValue(props[key], key);
     }
   }
 
@@ -70,25 +81,39 @@ export function DynamicReactRenderer({ componentName, props }: DynamicReactRende
 export function renderComponentTree(jsonTree: string): React.ReactNode {
   try {
     const data = JSON.parse(jsonTree);
-    if (data.component && componentRegistry[data.component]) {
-      return React.createElement(
-        DynamicReactRenderer,
-        { componentName: data.component, props: data.props }
-      );
+    if (typeof data !== 'object' || data === null) {
+        return <div className="text-destructive">Error: Invalid component tree data.</div>;
+    }
+
+    if (data.component && typeof data.component === 'string') {
+        if (componentRegistry[data.component]) {
+            return React.createElement(
+                DynamicReactRenderer,
+                { componentName: data.component, props: data.props || {} }
+            );
+        } else {
+            // Component is defined but not in registry
+            return <div className="text-destructive">Error: Component '{data.component}' not found.</div>;
+        }
     } else if (Array.isArray(data)) {
         // If it's an array, try to render each item.
         return (
             <>
                 {data.map((item, index) => {
-                    if (item.component && componentRegistry[item.component]) {
-                        return React.createElement(
-                            DynamicReactRenderer,
-                            { componentName: item.component, props: item.props, key: index }
-                        );
-                    } else if (typeof item === 'string' || typeof item === 'number') {
+                    // Each item in the array should ideally be a component descriptor or a primitive
+                    if (typeof item === 'object' && item !== null && 'component' in item && typeof (item as { component: string }).component === 'string') {
+                        if (componentRegistry[(item as { component: string }).component]) {
+                            return React.createElement(
+                                DynamicReactRenderer,
+                                { componentName: (item as { component: string }).component, props: (item as { props: Record<string, unknown> }).props || {}, key: index }
+                            );
+                        } else {
+                            return <div key={index} className="text-destructive">Error: Component '{(item as { component: string }).component}' not found in array.</div>;
+                        }                     
+                    } else if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
                         return <span key={index}>{item}</span>;
                     }
-                    return null;
+                    return <div key={index} className="text-destructive">Error: Invalid item in component tree array.</div>;
                 })}
             </>
         );
