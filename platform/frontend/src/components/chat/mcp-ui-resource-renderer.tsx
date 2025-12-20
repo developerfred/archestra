@@ -1,6 +1,6 @@
 "use client";
 
-import "@/styles/mcp-ui.css";
+
 import type { UIActionResult, UIResourceContent } from "@shared";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
