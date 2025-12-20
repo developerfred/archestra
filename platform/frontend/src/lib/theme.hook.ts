@@ -56,7 +56,7 @@ export function useOrgTheme() {
       setCurrentUITheme(themeId);
       setCurrentUIFont(fontId);
       updateThemeMutation.mutate({
-        theme: themeId,
+        theme: themeId as string,
         customFont: fontId,
       });
       applyThemeInLocalStorage(themeId);
