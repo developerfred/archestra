@@ -1,4 +1,4 @@
-import { expect, test } from "../api/fixtures";
+import { expect, test } from "../../fixtures";
 import {
   findCatalogItem,
   findInstalledServer,

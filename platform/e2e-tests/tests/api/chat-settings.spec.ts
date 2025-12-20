@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, test } from "../../fixtures";
 
 test.describe("Chat API Keys CRUD", () => {
   test("should list chat API keys (initially empty or with existing keys)", async ({

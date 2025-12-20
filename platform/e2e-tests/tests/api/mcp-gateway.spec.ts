@@ -4,7 +4,7 @@ import {
   MCP_SERVER_TOOL_NAME_SEPARATOR,
   UI_BASE_URL,
 } from "../../consts";
-import { expect, test } from "./fixtures";
+import { expect, test } from "../../fixtures";
 import { getOrgTokenForProfile, makeApiRequest, findCatalogItem, findInstalledServer, waitForServerInstallation } from "./mcp-gateway-utils";
 
 /**
