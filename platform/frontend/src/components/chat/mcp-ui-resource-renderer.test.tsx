@@ -51,7 +51,7 @@ describe("McpUIResourceRenderer", () => {
   const setupMockedRenderer = async (
     renderer: (props: {
       onUIAction?: (action: UIActionResult) => void;
-    }) => JSX.Element,
+    }) => React.ReactElement,
   ) => {
     vi.doMock("@mcp-ui/client", () => ({
       UIResourceRenderer: vi.fn(renderer),
