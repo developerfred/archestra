@@ -158,13 +158,50 @@ export const LocalConfigFormSchema = z.object({
  * All themes from https://github.com/jnsahaj/tweakcn
  * Theme IDs are generated from shared/themes/theme-config.ts
  */
-export const OrganizationThemeSchema = z.enum(THEME_IDS);
+export const OrganizationThemeSchema = z.enum([
+  'modern-minimal',
+  'graphite',
+  'clean-slate',
+  'mono',
+  'elegant-luxury',
+  'claymorphism',
+  't3-chat',
+  'twitter',
+  'bubblegum',
+  'tangerine',
+  'quantum-rose',
+  'candyland',
+  'pastel-dreams',
+  'retro-arcade',
+  'caffeine',
+  'amber-minimal',
+  'cosmic-night',
+  'doom-64',
+  'catppuccin',
+  'perpetuity',
+  'midnight-bloom',
+  'starry-night',
+  'cyberpunk',
+  'mocha-mousse',
+  'kodama-grove',
+  'nature',
+  'ocean-breeze',
+  'sunset-horizon',
+  'solar-dusk',
+  'bold-tech',
+  'neo-brutalism',
+  'supabase',
+  'vercel',
+  'claude',
+  'northern-lights',
+  'vintage-paper',
+]);
 export const OrganizationCustomFontSchema = z.enum([
-  "lato",
-  "inter",
-  "open-sans",
-  "roboto",
-  "source-sans-pro",
+  'lato',
+  'inter',
+  'open-sans',
+  'roboto',
+  'source-sans-pro',
 ]);
 
 export type OrganizationTheme = z.infer<typeof OrganizationThemeSchema>;
