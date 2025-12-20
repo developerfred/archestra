@@ -1,7 +1,5 @@
 import {
   DEFAULT_THEME_ID,
-  OrganizationCustomFont,
-  OrganizationTheme,
   archestraApiTypes,
 } from "@shared";
 import { usePathname } from "next/navigation";
@@ -11,8 +9,9 @@ import { useOrganization, useUpdateOrganization } from "./organization.query";
 
 const THEME_STORAGE_KEY = "archestra-theme";
 const FONT_STORAGE_KEY = "archestra-font";
-const DEFAULT_THEME: OrganizationTheme = DEFAULT_THEME_ID as OrganizationTheme;
-const DEFAULT_FONT: OrganizationCustomFont = "lato";
+// Using string for DEFAULT_THEME and DEFAULT_FONT as OrganizationTheme/CustomFont types are problematic due to API schema incompatibility
+const DEFAULT_THEME: string = DEFAULT_THEME_ID;
+const DEFAULT_FONT: string = "lato";
 
 export function useOrgTheme() {
   const pathname = usePathname();
@@ -43,20 +42,20 @@ export function useOrgTheme() {
         ) as OrganizationCustomFont | null)
       : null;
 
-  const [currentUITheme, setCurrentUITheme] = useState<OrganizationTheme>(
+  const [currentUITheme, setCurrentUITheme] = useState<string>(
     themeFromLocalStorage || themeFromBackend || DEFAULT_THEME,
   );
 
-  const [currentUIFont, setCurrentUIFont] = useState<OrganizationCustomFont>(
+  const [currentUIFont, setCurrentUIFont] = useState<string>(
     fontFromLocalStorage || fontFromBackend || DEFAULT_FONT,
   );
 
   const saveAppearance = useCallback(
-    (themeId: OrganizationTheme, fontId: OrganizationCustomFont) => {
+    (themeId: string, fontId: string) => {
       setCurrentUITheme(themeId);
       setCurrentUIFont(fontId);
       updateThemeMutation.mutate({
-        theme: themeId as string,
+        theme: themeId,
         customFont: fontId,
       });
       applyThemeInLocalStorage(themeId);
@@ -111,7 +110,7 @@ export function useOrgTheme() {
   };
 }
 
-const applyThemeOnUI = (themeId: OrganizationTheme) => {
+const applyThemeOnUI = (themeId: string) => {
   const root = document.documentElement;
   const themeClasses = Array.from(root.classList).filter((cls) =>
     cls.startsWith("theme-"),
@@ -122,7 +121,7 @@ const applyThemeOnUI = (themeId: OrganizationTheme) => {
   root.classList.add(`theme-${themeId}`);
 };
 
-const applyFontOnUI = (fontId: OrganizationCustomFont) => {
+const applyFontOnUI = (fontId: string) => {
   const root = document.documentElement;
   const fontFamily = fontFamilyMap[fontId];
   if (fontFamily) {
@@ -130,10 +129,10 @@ const applyFontOnUI = (fontId: OrganizationCustomFont) => {
   }
 };
 
-const applyThemeInLocalStorage = (themeId: OrganizationTheme) => {
+const applyThemeInLocalStorage = (themeId: string) => {
   localStorage.setItem(THEME_STORAGE_KEY, themeId);
 };
 
-const applyFontInLocalStorage = (fontId: OrganizationCustomFont) => {
+const applyFontInLocalStorage = (fontId: string) => {
   localStorage.setItem(FONT_STORAGE_KEY, fontId);
 };

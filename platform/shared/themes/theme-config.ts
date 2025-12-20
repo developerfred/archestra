@@ -17,19 +17,6 @@ export interface ThemeConfig {
  * This is the single source of truth for which themes are available
  */
 export const SUPPORTED_THEMES = [
-  // Shadcn/ui default colors
-  { id: "zinc", category: "minimal" },
-  { id: "slate", category: "minimal" },
-  { id: "stone", category: "minimal" },
-  { id: "gray", category: "minimal" },
-  { id: "neutral", category: "minimal" },
-  { id: "red", category: "vibrant" },
-  { id: "rose", category: "vibrant" },
-  { id: "orange", category: "vibrant" },
-  { id: "green", category: "vibrant" },
-  { id: "blue", category: "vibrant" },
-  { id: "violet", category: "vibrant" },
-
   // Minimal & Clean
   { id: "modern-minimal", category: "minimal" },
   { id: "graphite", category: "minimal" },
