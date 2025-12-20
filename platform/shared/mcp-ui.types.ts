@@ -164,7 +164,7 @@ export function extractUIResourceFromOutput(
             type: "resource" as const,
             resource: {
               uri: `ui://auto-generated/${Date.now()}`,
-              mimeType: "text/html",
+              mimeType: "text/html" as UIResourceMimeType,
               text: htmlContent,
             },
           };
