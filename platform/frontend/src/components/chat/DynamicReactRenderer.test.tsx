@@ -146,7 +146,7 @@ describe('renderComponentTree', () => {
     const cardContent = screen.getByTestId('CardContent');
     expect(cardContent).toBeInTheDocument();
     // Expect the `complexData` object to be stringified and rendered as text content
-    expect(cardContent).toHaveTextContent(JSON.stringify(complexData, null, 2));
+    expect(cardContent.textContent?.replace(/\s/g, '')).toEqual(JSON.stringify(complexData, null, 2).replace(/\s/g, ''));
   });
 
   it('should handle arrays of strings as ul li structure within children', () => {
