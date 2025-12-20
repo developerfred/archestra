@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../ui/card';
-import { Badge } from '../../ui/badge';
-import { Separator } from '../../ui/separator';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
 
 // A registry of components that can be dynamically rendered
 // Add more components here as needed, by importing them.
