@@ -51,10 +51,11 @@ export function DynamicReactRenderer({ componentName, props }: DynamicReactRende
     }
 
     // If it's an object that looks like a component descriptor
-    if (typeof value === 'object' && 'component' in value && typeof (value as { component: string }).component === 'string') {
+    if (typeof value === 'object' && value !== null && 'component' in value && typeof (value as { component: string }).component === 'string') {
+      const componentData = value as { component: string; props?: Record<string, unknown> };
       return React.createElement(DynamicReactRenderer, {
-        componentName: (value as { component: string }).component,
-        props: (value as { props: Record<string, unknown> }).props || {},
+        componentName: componentData.component,
+        props: componentData.props || {},
         key,
       });
     }
