@@ -80,14 +80,15 @@ export function CreateSsoProviderDialog({
   const onSubmit = useCallback(
     async (data: SsoProviderFormValues) => {
       if (data.providerType === "oidc") {
+        const oidcConfig = data.oidcConfig!; // Assert as non-null as schema should validate it
+
         await createSsoProvider.mutateAsync({
           ...data,
           domain: data.domain ?? "",
-          issuer: data.issuer || data.oidcConfig?.issuer || "",
+          issuer: data.issuer || oidcConfig.issuer || "",
           oidcConfig: {
-            ...data.oidcConfig,
-            issuer: data.oidcConfig.issuer ?? "",
-            discoveryEndpoint: data.oidcConfig.discoveryEndpoint ?? "",
+            ...oidcConfig,
+            pkce: oidcConfig.pkce ?? false, // Ensure pkce is boolean
           },
         });
       } else {
