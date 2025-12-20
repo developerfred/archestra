@@ -55,7 +55,7 @@ export function useOrgTheme() {
       setCurrentUITheme(themeId);
       setCurrentUIFont(fontId);
       updateThemeMutation.mutate({
-        theme: themeId,
+        theme: themeId as archestraApiTypes.UpdateOrganizationData["body"]["theme"],
         customFont: fontId,
       });
       applyThemeInLocalStorage(themeId);
